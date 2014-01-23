@@ -5,9 +5,9 @@ SetCompressor /SOLID lzma
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
-!define VERSION 0.3.0
-!define COMPANY "PPCoin project"
-!define URL http://www.ppcoin.org/
+!define VERSION 0.3.1
+!define COMPANY "Peercoin project"
+!define URL http://peercoin.net/
 
 # MUI Symbol Definitions
 !define MUI_ICON "../share/pixmaps/bitcoin.ico"
@@ -45,7 +45,7 @@ Var StartMenuGroup
 !insertmacro MUI_LANGUAGE English
 
 # Installer attributes
-OutFile ppcoin-0.3.0-win32-setup.exe
+OutFile ppcoin-0.3.1-win32-setup.exe
 InstallDir $PROGRAMFILES\PPCoin
 CRCCheck on
 XPStyle on
@@ -121,7 +121,7 @@ done${UNSECTION_ID}:
 
 # Uninstaller sections
 Section /o -un.Main UNSEC0000
-    Delete /REBOOTOK $INSTDIR\ppcoin-qt.exe
+    Delete /REBOOTOK $INSTDIR\peercoin-qt.exe
     Delete /REBOOTOK $INSTDIR\license.txt
     Delete /REBOOTOK $INSTDIR\readme.txt
     RMDir /r /REBOOTOK $INSTDIR\daemon
