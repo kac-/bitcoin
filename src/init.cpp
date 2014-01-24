@@ -1,6 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Copyright (c) 2011-2013 The PPCoin developers
+// Copyright (c) 2014 The Peercoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #include "db.h"
@@ -179,13 +180,13 @@ bool AppInit2(int argc, char* argv[])
         string strUsage = string() +
           _("Peercoin version") + " " + FormatFullVersion() + "\n\n" +
           _("Usage:") + "\t\t\t\t\t\t\t\t\t\t\n" +
-            "  ppcoind [options]                   \t  " + "\n" +
-            "  ppcoind [options] <command> [params]\t  " + _("Send command to -server or ppcoind") + "\n" +
-            "  ppcoind [options] help              \t\t  " + _("List commands") + "\n" +
-            "  ppcoind [options] help <command>    \t\t  " + _("Get help for a command") + "\n" +
+            "  peercoind [options]                   \t  " + "\n" +
+            "  peercoind [options] <command> [params]\t  " + _("Send command to -server or peercoind") + "\n" +
+            "  peercoind [options] help              \t\t  " + _("List commands") + "\n" +
+            "  peercoind [options] help <command>    \t\t  " + _("Get help for a command") + "\n" +
           _("Options:") + "\n" +
-            "  -conf=<file>     \t\t  " + _("Specify configuration file (default: ppcoin.conf)") + "\n" +
-            "  -pid=<file>      \t\t  " + _("Specify pid file (default: ppcoind.pid)") + "\n" +
+            "  -conf=<file>     \t\t  " + _("Specify configuration file (default: peercoin.conf)") + "\n" +
+            "  -pid=<file>      \t\t  " + _("Specify pid file (default: peercoind.pid)") + "\n" +
             "  -gen             \t\t  " + _("Generate coins") + "\n" +
             "  -gen=0           \t\t  " + _("Don't generate coins") + "\n" +
             "  -min             \t\t  " + _("Start minimized") + "\n" +
@@ -294,7 +295,7 @@ bool AppInit2(int argc, char* argv[])
 
 #ifndef QT_GUI
     for (int i = 1; i < argc; i++)
-        if (!IsSwitchChar(argv[i][0]) && !(strlen(argv[i]) >= 7 && strncasecmp(argv[i], "ppcoin:", 7) == 0))
+        if (!IsSwitchChar(argv[i][0]) && !(strlen(argv[i]) >= 7 && strncasecmp(argv[i], "peercoin:", 7) == 0))
             fCommandLine = true;
 
     if (fCommandLine)

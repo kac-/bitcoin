@@ -1644,8 +1644,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="5"/>
-        <source>Send command to -server or ppcoind</source>
-        <translation>Lähetä käsky palvelimelle tai ppcoind:lle</translation>
+        <source>Send command to -server or peercoind</source>
+        <translation>Lähetä käsky palvelimelle tai peercoind:lle</translation>
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="6"/>
@@ -1669,7 +1669,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="10"/>
-        <source>Specify pid file (default: ppcoind.pid)</source>
+        <source>Specify pid file (default: peercoind.pid)</source>
         <translation>Määritä pid-tiedosto (oletus: Peercoin.pid)</translation>
     </message>
     <message>

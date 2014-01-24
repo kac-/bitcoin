@@ -1646,8 +1646,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="5"/>
-        <source>Send command to -server or ppcoind</source>
-        <translation>Stuur commando naar -server of ppcoind
+        <source>Send command to -server or peercoind</source>
+        <translation>Stuur commando naar -server of peercoind
 </translation>
     </message>
     <message>
@@ -1676,8 +1676,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../bitcoinstrings.cpp" line="10"/>
-        <source>Specify pid file (default: ppcoind.pid)</source>
-        <translation>Specifieer pid-bestand (standaard: ppcoind.pid)
+        <source>Specify pid file (default: peercoind.pid)</source>
+        <translation>Specifieer pid-bestand (standaard: peercoind.pid)
 </translation>
     </message>
     <message>

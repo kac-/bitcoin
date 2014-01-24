@@ -778,7 +778,7 @@ void FormatException(char* pszMessage, std::exception* pex, const char* pszThrea
     pszModule[0] = '\0';
     GetModuleFileNameA(NULL, pszModule, sizeof(pszModule));
 #else
-    const char* pszModule = "ppcoin";
+    const char* pszModule = "peercoin";
 #endif
     if (pex)
         snprintf(pszMessage, 1000,
@@ -853,12 +853,12 @@ boost::filesystem::path GetDefaultDataDir()
 {
     namespace fs = boost::filesystem;
 
-    // Windows: C:\Documents and Settings\username\Application Data\PPCoin
-    // Mac: ~/Library/Application Support/PPCoin
-    // Unix: ~/.ppcoin
+    // Windows: C:\Documents and Settings\username\Application Data\Peercoin
+    // Mac: ~/Library/Application Support/Peercoin
+    // Unix: ~/.peercoin
 #ifdef WIN32
     // Windows
-    return MyGetSpecialFolderPath(CSIDL_APPDATA, true) / "PPCoin";
+    return MyGetSpecialFolderPath(CSIDL_APPDATA, true) / "Peercoin";
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -870,10 +870,10 @@ boost::filesystem::path GetDefaultDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     fs::create_directory(pathRet);
-    return pathRet / "PPCoin";
+    return pathRet / "Peercoin";
 #else
     // Unix
-    return pathRet / ".ppcoin";
+    return pathRet / ".peercoin";
 #endif
 #endif
 }
@@ -917,7 +917,7 @@ boost::filesystem::path GetConfigFile()
 {
     namespace fs = boost::filesystem;
 
-    fs::path pathConfigFile(GetArg("-conf", "ppcoin.conf"));
+    fs::path pathConfigFile(GetArg("-conf", "peercoin.conf"));
     if (!pathConfigFile.is_complete()) pathConfigFile = GetDataDir(false) / pathConfigFile;
     return pathConfigFile;
 }
@@ -953,7 +953,7 @@ boost::filesystem::path GetPidFile()
 {
     namespace fs = boost::filesystem;
 
-    fs::path pathPidFile(GetArg("-pid", "ppcoind.pid"));
+    fs::path pathPidFile(GetArg("-pid", "peercoind.pid"));
     if (!pathPidFile.is_complete()) pathPidFile = GetDataDir() / pathPidFile;
     return pathPidFile;
 }
@@ -1123,7 +1123,7 @@ std::string FormatSubVersion(const std::string& name, int nClientVersion, const 
 #ifdef WIN32
 boost::filesystem::path static StartupShortcutPath()
 {
-    return MyGetSpecialFolderPath(CSIDL_STARTUP, true) / "PPCoin.lnk";
+    return MyGetSpecialFolderPath(CSIDL_STARTUP, true) / "Peercoin.lnk";
 }
 
 bool GetStartOnSystemStartup()
@@ -1204,7 +1204,7 @@ boost::filesystem::path static GetAutostartDir()
 
 boost::filesystem::path static GetAutostartFilePath()
 {
-    return GetAutostartDir() / "ppcoin.desktop";
+    return GetAutostartDir() / "peercoin.desktop";
 }
 
 bool GetStartOnSystemStartup()
