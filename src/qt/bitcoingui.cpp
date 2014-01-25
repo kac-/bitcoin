@@ -568,8 +568,9 @@ void BitcoinGUI::setNumBlocks(int count)
     else
     {
         tooltip = tr("Catching up...") + QString("\n") + tooltip;
-        labelBlocksIcon->setMovie(syncIconMovie);
-        syncIconMovie->start();
+         labelBlocksIcon->setPixmap(QIcon(":/icons/notsynced").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
+       // labelBlocksIcon->setMovie(syncIconMovie);
+       // syncIconMovie->start();
     }
 
     if(!text.isEmpty())
