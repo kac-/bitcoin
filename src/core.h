@@ -15,7 +15,7 @@
 class CTransaction;
 
 /** No amount larger than this (in satoshi) is valid */
-static const int64_t MAX_MONEY = 21000000 * COIN;
+static const int64_t MAX_MONEY = 2000000000 * COIN;
 inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 
 /** An outpoint - a combination of a transaction hash and an index n into its vout */
@@ -108,6 +108,12 @@ public:
 
     std::string ToString() const;
     void print() const;
+
+    //Peercoin-CE
+    std::string ToStringShort() const
+    {
+        return strprintf(" %s %d", prevout.hash.ToString().c_str(), prevout.n);
+    }
 };
 
 
@@ -174,6 +180,23 @@ public:
 
     std::string ToString() const;
     void print() const;
+
+    //Peercoin-CE
+    void SetEmpty()
+    {
+        nValue = 0;
+        scriptPubKey.clear();
+    }
+
+    bool IsEmpty() const
+    {
+        return (nValue == 0 && scriptPubKey.empty());
+    }
+
+    std::string ToStringShort() const
+    {
+        return strprintf(" out %s %s", FormatMoney(nValue).c_str(), scriptPubKey.ToString().c_str());
+    }
 };
 
 
@@ -187,6 +210,8 @@ public:
     static int64_t nMinRelayTxFee;
     static const int CURRENT_VERSION=1;
     int nVersion;
+    //Peercoin-CE
+    unsigned int nTime;
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
     unsigned int nLockTime;
@@ -200,6 +225,8 @@ public:
     (
         READWRITE(this->nVersion);
         nVersion = this->nVersion;
+        //Peercoin-CE
+        READWRITE(nTime);
         READWRITE(vin);
         READWRITE(vout);
         READWRITE(nLockTime);
@@ -211,6 +238,9 @@ public:
         vin.clear();
         vout.clear();
         nLockTime = 0;
+
+        //Peercoin-CE
+        nTime = GetAdjustedTime();
     }
 
     bool IsNull() const
@@ -231,12 +261,19 @@ public:
 
     bool IsCoinBase() const
     {
-        return (vin.size() == 1 && vin[0].prevout.IsNull());
+        return (vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
+    }
+    
+    bool IsCoinStake() const
+    {
+        // ppcoin: the coin stake transaction is marked with the first output empty
+        return (vin.size() > 0 && (!vin[0].prevout.IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
     }
 
     friend bool operator==(const CTransaction& a, const CTransaction& b)
     {
         return (a.nVersion  == b.nVersion &&
+                a.nTime     == b.nTime &&
                 a.vin       == b.vin &&
                 a.vout      == b.vout &&
                 a.nLockTime == b.nLockTime);
@@ -250,6 +287,56 @@ public:
 
     std::string ToString() const;
     void print() const;
+
+    //Peercoin-CE
+    /*TODO GetMinFee_mode not declared
+    int64_t GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=false, enum GetMinFee_mode mode=GMF_BLOCK) const
+    {
+        // Base fee is either MIN_TX_FEE or MIN_RELAY_TX_FEE
+        int64_t nBaseFee = (mode == GMF_RELAY) ? MIN_RELAY_TX_FEE : MIN_TX_FEE;
+
+        unsigned int nBytes = ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION);
+        unsigned int nNewBlockSize = nBlockSize + nBytes;
+        int64_t nMinFee = (1 + (int64)nBytes / 1000) * nBaseFee;
+
+        if (fAllowFree)
+        {
+            if (nBlockSize == 1)
+            {
+                // Transactions under 10K are free
+                // (about 4500bc if made of 50bc inputs)
+                if (nBytes < 10000)
+                    nMinFee = 0;
+            }
+            else
+            {
+                // Free transaction area
+                if (nNewBlockSize < 27000)
+                    nMinFee = 0;
+            }
+        }
+
+        // To limit dust spam, require MIN_TX_FEE/MIN_RELAY_TX_FEE if any output is less than 0.01
+        if (nMinFee < nBaseFee)
+        {
+            BOOST_FOREACH(const CTxOut& txout, vout)
+                if (txout.nValue < CENT)
+                    nMinFee = nBaseFee;
+        }
+
+        // Raise the price as the block approaches full
+        if (nBlockSize != 1 && nNewBlockSize >= MAX_BLOCK_SIZE_GEN/2)
+        {
+            if (nNewBlockSize >= MAX_BLOCK_SIZE_GEN)
+                return MAX_MONEY;
+            nMinFee *= MAX_BLOCK_SIZE_GEN / (MAX_BLOCK_SIZE_GEN - nNewBlockSize);
+        }
+
+        if (!MoneyRange(nMinFee))
+            nMinFee = MAX_MONEY;
+        return nMinFee;
+    }
+    */
 };
 
 /** wrapper for CTxOut that provides a more compact serialization */

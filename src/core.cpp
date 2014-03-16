@@ -64,6 +64,12 @@ uint256 CTxOut::GetHash() const
 
 std::string CTxOut::ToString() const
 {
+    //Peercoin-CE
+    if (IsEmpty()) 
+        return "CTxOut(empty)";
+    if (scriptPubKey.size() < 6)
+        return "CTxOut(error)";
+
     return strprintf("CTxOut(nValue=%d.%08d, scriptPubKey=%s)", nValue / COIN, nValue % COIN, scriptPubKey.ToString().substr(0,30));
 }
 

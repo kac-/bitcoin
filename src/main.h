@@ -65,6 +65,20 @@ static const int MAX_BLOCKS_IN_TRANSIT_PER_PEER = 128;
 /** Timeout in seconds before considering a block download peer unresponsive. */
 static const unsigned int BLOCK_DOWNLOAD_TIMEOUT = 60;
 
+//Peercoin-CE
+static const int64_t MIN_TX_FEE = CENT;
+static const int64_t MIN_RELAY_TX_FEE = CENT;
+static const int64_t MAX_MINT_PROOF_OF_WORK = 9999 * COIN;
+static const int64_t MIN_TXOUT_AMOUNT = MIN_TX_FEE;
+static const int COINBASE_MATURITY_PPC = 500;
+static const int STAKE_TARGET_SPACING = 10 * 60; // 10-minute block spacing
+static const int STAKE_MIN_AGE = 60 * 60 * 24 * 30; // minimum age for coin age
+static const int STAKE_MAX_AGE = 60 * 60 * 24 * 90; // stake age of full weight
+static const uint256 hashGenesisBlockOfficial("0x0000000032fe677166d54963b62a4677d8957e87c508eaa4fd7eb1c880cd27e3");
+static const uint256 hashGenesisBlockTestNet("0x00000001f757bb737f6596503e17cd17b0658ce630cc727c0cca81aec47c9f06");
+static const int64_t nMaxClockDrift = 2 * 60 * 60; // two hours
+
+
 #ifdef USE_UPNP
 static const int fHaveUPnP = true;
 #else
@@ -96,6 +110,16 @@ extern bool fBenchmark;
 extern int nScriptCheckThreads;
 extern bool fTxIndex;
 extern unsigned int nCoinCacheSize;
+
+//Peercoin-CE
+extern std::set<std::pair<COutPoint, unsigned int> > setStakeSeen;
+extern unsigned int nStakeMinAge;
+extern int nCoinbaseMaturity;
+extern CBigNum bnBestChainTrust;
+extern CBigNum bnBestInvalidTrust;
+extern int64_t nLastCoinStakeSearchInterval;
+extern std::map<uint256, CBlock*> mapOrphanBlocks;
+
 
 // Minimum disk space required - used in CheckDiskSpace()
 static const uint64_t nMinDiskSpace = 52428800;
@@ -190,8 +214,14 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                         bool* pfMissingInputs, bool fRejectInsaneFee=false);
 
 
-
-
+//Peercoin-CE
+class CReserveKey;
+CBlock* CreateNewBlock(CReserveKey& reservekey, CWallet* pwallet, bool fProofOfStake=false);
+int64_t GetProofOfWorkReward(unsigned int nBits);
+int64_t GetProofOfStakeReward(int64_t nCoinAge);
+uint256 WantedByOrphan(const CBlock* pblockOrphan);
+const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfStake);
+void BitcoinMiner(CWallet *pwallet, bool fProofOfStake);
 
 
 
