@@ -1,0 +1,42 @@
+--- a/src/qt/forms/aboutdialog.ui
++++ b/src/qt/forms/aboutdialog.ui
+@@ -11,7 +11,7 @@
+    </rect>
+   </property>
+   <property name="windowTitle">
+-   <string>About Bitcoin</string>
++   <string>About PPCoin</string>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <item>
+@@ -50,7 +50,7 @@
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+-          <string>&lt;b&gt;Bitcoin&lt;/b&gt; version</string>
++          <string>&lt;b&gt;PPCoin&lt;/b&gt; version</string>
+          </property>
+          <property name="textInteractionFlags">
+           <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+@@ -86,6 +86,19 @@
+       </layout>
+      </item>
+      <item>
++      <widget class="QLabel" name="label_ppcoin_copyright">
++       <property name="text">
++        <string>Copyright © 2011-2013 PPCoin Developers</string>
++       </property>
++       <property name="wordWrap">
++        <bool>true</bool>
++       </property>
++       <property name="textInteractionFlags">
++        <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
++       </property>
++      </widget>
++     </item>
++     <item>
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Copyright © 2009-2012 Bitcoin Developers
+diff --git a/src/qt/forms/overviewpage.ui b/src/qt/forms/overviewpage.ui
+index 10e470e..c58c176 100644

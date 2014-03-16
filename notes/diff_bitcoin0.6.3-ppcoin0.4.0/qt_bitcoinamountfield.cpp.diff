@@ -1,0 +1,13 @@
+--- a/src/qt/bitcoinamountfield.cpp
++++ b/src/qt/bitcoinamountfield.cpp
+@@ -22,7 +22,7 @@ BitcoinAmountField::BitcoinAmountField(QWidget *parent):
+     amount->setDecimals(8);
+     amount->installEventFilter(this);
+     amount->setMaximumWidth(170);
+-    amount->setSingleStep(0.001);
++    amount->setSingleStep(1.0);
+ 
+     QHBoxLayout *layout = new QHBoxLayout(this);
+     layout->addWidget(amount);
+diff --git a/src/qt/bitcoingui.cpp b/src/qt/bitcoingui.cpp
+index fd31d3c..249d775 100644

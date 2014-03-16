@@ -1,0 +1,13 @@
+--- a/src/qt/qrcodedialog.cpp
++++ b/src/qt/qrcodedialog.cpp
+@@ -66,7 +66,7 @@ void QRCodeDialog::genCode()
+ 
+ QString QRCodeDialog::getURI()
+ {
+-    QString ret = QString("bitcoin:%1").arg(address);
++    QString ret = QString("ppcoin:%1").arg(address);
+ 
+     int paramCount = 0;
+     if (ui->chkReqPayment->isChecked() && !ui->lnReqAmount->text().isEmpty())
+diff --git a/src/qt/res/bitcoin-qt.rc b/src/qt/res/bitcoin-qt.rc
+index 1a1ab53..16e9fd1 100644

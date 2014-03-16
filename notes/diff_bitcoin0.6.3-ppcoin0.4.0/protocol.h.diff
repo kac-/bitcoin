@@ -1,0 +1,38 @@
+--- a/src/protocol.h
++++ b/src/protocol.h
+@@ -15,15 +15,21 @@
+ #include <string>
+ #include "uint256.h"
+ 
++#define PPCOIN_PORT  9901
++#define RPC_PORT     9902
++#define TESTNET_PORT 9903
++#define TESTNET_RPC_PORT 9904
++
+ extern bool fTestNet;
++
++void GetMessageStart(unsigned char pchMessageStart[], bool fPersistent = false);
++
+ static inline unsigned short GetDefaultPort(const bool testnet = fTestNet)
+ {
+-    return testnet ? 18333 : 8333;
++    return testnet ? TESTNET_PORT : PPCOIN_PORT;
+ }
+ 
+ 
+-extern unsigned char pchMessageStart[4];
+-
+ /** Message header.
+  * (4) message start.
+  * (12) command.
+@@ -50,7 +56,7 @@ class CMessageHeader
+     // TODO: make private (improves encapsulation)
+     public:
+         enum { COMMAND_SIZE=12 };
+-        char pchMessageStart[sizeof(::pchMessageStart)];
++        unsigned char pchMessageStart[4];
+         char pchCommand[COMMAND_SIZE];
+         unsigned int nMessageSize;
+         unsigned int nChecksum;
+diff --git a/src/qt/askpassphrasedialog.cpp b/src/qt/askpassphrasedialog.cpp
+index 31e4040..6151f87 100644

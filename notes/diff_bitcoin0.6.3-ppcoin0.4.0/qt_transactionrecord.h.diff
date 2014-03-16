@@ -1,0 +1,14 @@
+--- a/src/qt/transactionrecord.h
++++ b/src/qt/transactionrecord.h
+@@ -68,7 +68,8 @@ public:
+         SendToOther,
+         RecvWithAddress,
+         RecvFromOther,
+-        SendToSelf
++        SendToSelf,
++        StakeMint
+     };
+ 
+     /** Number of confirmation needed for transaction */
+diff --git a/src/qt/transactiontablemodel.cpp b/src/qt/transactiontablemodel.cpp
+index 5f505f4..9c3b80e 100644

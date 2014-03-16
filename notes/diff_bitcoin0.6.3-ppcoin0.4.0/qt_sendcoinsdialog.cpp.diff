@@ -1,0 +1,35 @@
+--- a/src/qt/sendcoinsdialog.cpp
++++ b/src/qt/sendcoinsdialog.cpp
+@@ -48,8 +48,8 @@ void SendCoinsDialog::setModel(WalletModel *model)
+     }
+     if(model)
+     {
+-        setBalance(model->getBalance(), model->getUnconfirmedBalance());
+-        connect(model, SIGNAL(balanceChanged(qint64, qint64)), this, SLOT(setBalance(qint64, qint64)));
++        setBalance(model->getBalance(), model->getStake(), model->getUnconfirmedBalance());
++        connect(model, SIGNAL(balanceChanged(qint64, qint64, qint64)), this, SLOT(setBalance(qint64, qint64, qint64)));
+     }
+ }
+ 
+@@ -125,7 +125,7 @@ void SendCoinsDialog::on_sendButton_clicked()
+         break;
+     case WalletModel::InvalidAmount:
+         QMessageBox::warning(this, tr("Send Coins"),
+-            tr("The amount to pay must be larger than 0."),
++            tr("The amount to pay must be at least one cent (0.01)."),
+             QMessageBox::Ok, QMessageBox::Ok);
+         break;
+     case WalletModel::AmountExceedsBalance:
+@@ -277,8 +277,9 @@ void SendCoinsDialog::handleURI(const QString &uri)
+     pasteEntry(rv);
+ }
+ 
+-void SendCoinsDialog::setBalance(qint64 balance, qint64 unconfirmedBalance)
++void SendCoinsDialog::setBalance(qint64 balance, qint64 stake, qint64 unconfirmedBalance)
+ {
++    Q_UNUSED(stake);
+     Q_UNUSED(unconfirmedBalance);
+     if(!model || !model->getOptionsModel())
+         return;
+diff --git a/src/qt/sendcoinsdialog.h b/src/qt/sendcoinsdialog.h
+index 5dcbfbe..a37bcdb 100644

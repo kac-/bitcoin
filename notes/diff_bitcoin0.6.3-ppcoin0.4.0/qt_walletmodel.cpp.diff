@@ -1,0 +1,55 @@
+--- a/src/qt/walletmodel.cpp
++++ b/src/qt/walletmodel.cpp
+@@ -25,6 +25,11 @@ qint64 WalletModel::getBalance() const
+     return wallet->GetBalance();
+ }
+ 
++qint64 WalletModel::getStake() const
++{
++    return wallet->GetStake();
++}
++
+ qint64 WalletModel::getUnconfirmedBalance() const
+ {
+     return wallet->GetUnconfirmedBalance();
+@@ -48,7 +53,7 @@ void WalletModel::update()
+     EncryptionStatus newEncryptionStatus = getEncryptionStatus();
+ 
+     if(cachedBalance != newBalance || cachedUnconfirmedBalance != newUnconfirmedBalance)
+-        emit balanceChanged(newBalance, newUnconfirmedBalance);
++        emit balanceChanged(newBalance, getStake(), newUnconfirmedBalance);
+ 
+     if(cachedNumTransactions != newNumTransactions)
+         emit numTransactionsChanged(newNumTransactions);
+@@ -92,7 +97,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
+         }
+         setAddress.insert(rcp.address);
+ 
+-        if(rcp.amount <= 0)
++        if(rcp.amount < MIN_TXOUT_AMOUNT)
+         {
+             return InvalidAmount;
+         }
+@@ -250,6 +255,11 @@ bool WalletModel::backupWallet(const QString &filename)
+ WalletModel::UnlockContext WalletModel::requestUnlock()
+ {
+     bool was_locked = getEncryptionStatus() == Locked;
++    if ((!was_locked) && fWalletUnlockMintOnly)
++    {
++        setWalletLocked(true);
++        was_locked = getEncryptionStatus() == Locked;
++    }
+     if(was_locked)
+     {
+         // Request UI to unlock wallet
+@@ -258,7 +268,7 @@ WalletModel::UnlockContext WalletModel::requestUnlock()
+     // If wallet is still locked, unlock was failed or cancelled, mark context as invalid
+     bool valid = getEncryptionStatus() != Locked;
+ 
+-    return UnlockContext(this, valid, was_locked);
++    return UnlockContext(this, valid, was_locked && !fWalletUnlockMintOnly);
+ }
+ 
+ WalletModel::UnlockContext::UnlockContext(WalletModel *wallet, bool valid, bool relock):
+diff --git a/src/qt/walletmodel.h b/src/qt/walletmodel.h
+index 6c47f61..11df41e 100644

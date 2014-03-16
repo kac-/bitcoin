@@ -1,0 +1,34 @@
+--- a/src/qt/res/bitcoin-qt.rc
++++ b/src/qt/res/bitcoin-qt.rc
+@@ -1 +1 @@
+-IDI_ICON1 ICON DISCARDABLE "icons/bitcoin.ico"
++IDI_ICON1 ICON DISCARDABLE "icons/ppcoin.ico"
+diff --git a/src/qt/res/icons/ppcoin.icns b/src/qt/res/icons/ppcoin.icns
+new file mode 100644
+index 0000000..ab605f4
+Binary files /dev/null and b/src/qt/res/icons/ppcoin.icns differ
+diff --git a/src/qt/res/icons/ppcoin.ico b/src/qt/res/icons/ppcoin.ico
+new file mode 100644
+index 0000000..694b083
+Binary files /dev/null and b/src/qt/res/icons/ppcoin.ico differ
+diff --git a/src/qt/res/icons/ppcoin.png b/src/qt/res/icons/ppcoin.png
+new file mode 100644
+index 0000000..62a291c
+Binary files /dev/null and b/src/qt/res/icons/ppcoin.png differ
+diff --git a/src/qt/res/icons/ppcoin_testnet.png b/src/qt/res/icons/ppcoin_testnet.png
+new file mode 100644
+index 0000000..d41c492
+Binary files /dev/null and b/src/qt/res/icons/ppcoin_testnet.png differ
+diff --git a/src/qt/res/icons/toolbar.png b/src/qt/res/icons/toolbar.png
+index 84c18e2..21c9587 100644
+Binary files a/src/qt/res/icons/toolbar.png and b/src/qt/res/icons/toolbar.png differ
+diff --git a/src/qt/res/icons/toolbar_testnet.png b/src/qt/res/icons/toolbar_testnet.png
+index 90ed6d9..c34e1e2 100644
+Binary files a/src/qt/res/icons/toolbar_testnet.png and b/src/qt/res/icons/toolbar_testnet.png differ
+diff --git a/src/qt/res/images/ppcoin_splash.png b/src/qt/res/images/ppcoin_splash.png
+new file mode 100644
+index 0000000..9f30bd9
+Binary files /dev/null and b/src/qt/res/images/ppcoin_splash.png differ
+diff --git a/src/qt/rpcconsole.cpp b/src/qt/rpcconsole.cpp
+new file mode 100644
+index 0000000..7d80909

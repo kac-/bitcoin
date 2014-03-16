@@ -1,0 +1,49 @@
+--- a/src/makefile.unix
++++ b/src/makefile.unix
+@@ -1,4 +1,5 @@
+ # Copyright (c) 2009-2010 Satoshi Nakamoto
++# Copyright (c) 2011-2012 The PPCoin developers
+ # Distributed under the MIT/X11 software license, see the accompanying
+ # file license.txt or http://www.opensource.org/licenses/mit-license.php.
+ 
+@@ -106,10 +107,11 @@ OBJS= \
+     obj/util.o \
+     obj/wallet.o \
+     obj/walletdb.o \
+-    obj/noui.o
++    obj/noui.o \
++    obj/kernel.o
+ 
+ 
+-all: bitcoind
++all: ppcoind
+ 
+ # auto-generated dependencies:
+ -include obj/*.P
+@@ -127,8 +129,8 @@ obj/%.o: %.cpp
+ 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
+ 	  rm -f $(@:%.o=%.d)
+ 
+-bitcoind: $(OBJS:obj/%=obj/%)
+-	$(CXX) $(xCXXFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
++ppcoind: $(OBJS:obj/%=obj/%)
++	$(CXX) $(xCXXFLAGS) -rdynamic -o $@ $^ $(LDFLAGS) $(LIBS)
+ 
+ TESTOBJS := $(patsubst test/%.cpp,obj-test/%.o,$(wildcard test/*.cpp))
+ 
+@@ -139,11 +141,11 @@ obj-test/%.o: test/%.cpp
+ 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
+ 	  rm -f $(@:%.o=%.d)
+ 
+-test_bitcoin: $(TESTOBJS) $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
++test_ppcoin: $(TESTOBJS) $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
+ 	$(CXX) $(xCXXFLAGS) -o $@ $(LIBPATHS) $^ -Wl,-B$(LMODE) -lboost_unit_test_framework $(LDFLAGS) $(LIBS)
+ 
+ clean:
+-	-rm -f bitcoind test_bitcoin
++	-rm -f ppcoind test_ppcoin
+ 	-rm -f obj/*.o
+ 	-rm -f obj-test/*.o
+ 	-rm -f obj/*.P
+diff --git a/src/net.cpp b/src/net.cpp
+index d3236b3..4a81ed8 100644

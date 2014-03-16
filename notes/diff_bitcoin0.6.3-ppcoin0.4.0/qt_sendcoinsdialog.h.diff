@@ -1,0 +1,13 @@
+--- a/src/qt/sendcoinsdialog.h
++++ b/src/qt/sendcoinsdialog.h
+@@ -38,7 +38,7 @@ public slots:
+     void accept();
+     SendCoinsEntry *addEntry();
+     void updateRemoveEnabled();
+-    void setBalance(qint64 balance, qint64 unconfirmedBalance);
++    void setBalance(qint64 balance, qint64 stake, qint64 unconfirmedBalance);
+ 
+ private:
+     Ui::SendCoinsDialog *ui;
+diff --git a/src/qt/sendcoinsentry.cpp b/src/qt/sendcoinsentry.cpp
+index c8242d8..18209ab 100644

@@ -1,0 +1,21 @@
+--- a/src/qt/transactionview.cpp
++++ b/src/qt/transactionview.cpp
+@@ -75,6 +75,7 @@ TransactionView::TransactionView(QWidget *parent) :
+                                   TransactionFilterProxy::TYPE(TransactionRecord::SendToOther));
+     typeWidget->addItem(tr("To yourself"), TransactionFilterProxy::TYPE(TransactionRecord::SendToSelf));
+     typeWidget->addItem(tr("Mined"), TransactionFilterProxy::TYPE(TransactionRecord::Generated));
++    typeWidget->addItem(tr("Mint by stake"), TransactionFilterProxy::TYPE(TransactionRecord::StakeMint));
+     typeWidget->addItem(tr("Other"), TransactionFilterProxy::TYPE(TransactionRecord::Other));
+ 
+     hlayout->addWidget(typeWidget);
+@@ -166,7 +167,7 @@ void TransactionView::setModel(WalletModel *model)
+         transactionView->setSelectionBehavior(QAbstractItemView::SelectRows);
+         transactionView->setSelectionMode(QAbstractItemView::ExtendedSelection);
+         transactionView->setSortingEnabled(true);
+-        transactionView->sortByColumn(TransactionTableModel::Status, Qt::DescendingOrder);
++        transactionView->sortByColumn(TransactionTableModel::Date, Qt::DescendingOrder);
+         transactionView->verticalHeader()->hide();
+ 
+         transactionView->horizontalHeader()->resizeSection(
+diff --git a/src/qt/walletmodel.cpp b/src/qt/walletmodel.cpp
+index b9ccb06..a000f29 100644

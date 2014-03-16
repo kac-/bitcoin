@@ -1,0 +1,13 @@
+--- a/src/qt/clientmodel.cpp
++++ b/src/qt/clientmodel.cpp
+@@ -93,3 +93,8 @@ QString ClientModel::formatBuildDate() const
+ {
+     return QString::fromStdString(CLIENT_DATE);
+ }
++
++QString ClientModel::clientName() const
++{
++    return QString::fromStdString(CLIENT_NAME);
++}
+diff --git a/src/qt/clientmodel.h b/src/qt/clientmodel.h
+index 8e7431a..74e0c06 100644

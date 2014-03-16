@@ -1,0 +1,12 @@
+--- a/src/qt/clientmodel.h
++++ b/src/qt/clientmodel.h
+@@ -38,6 +38,7 @@ public:
+ 
+     QString formatFullVersion() const;
+     QString formatBuildDate() const;
++    QString clientName() const;
+ 
+ private:
+     OptionsModel *optionsModel;
+diff --git a/src/qt/forms/aboutdialog.ui b/src/qt/forms/aboutdialog.ui
+index 6e342e5..4057eb4 100644

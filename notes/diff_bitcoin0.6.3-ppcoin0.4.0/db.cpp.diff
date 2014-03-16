@@ -1,0 +1,137 @@
+--- a/src/db.cpp
++++ b/src/db.cpp
+@@ -1,11 +1,15 @@
+ // Copyright (c) 2009-2010 Satoshi Nakamoto
+ // Copyright (c) 2009-2012 The Bitcoin developers
++// Copyright (c) 2011-2013 The PPCoin developers
+ // Distributed under the MIT/X11 software license, see the accompanying
+ // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+ 
+ #include "db.h"
++#include "net.h"
++#include "checkpoints.h"
+ #include "util.h"
+ #include "main.h"
++#include "kernel.h"
+ #include <boost/version.hpp>
+ #include <boost/filesystem.hpp>
+ #include <boost/filesystem/fstream.hpp>
+@@ -485,14 +489,44 @@ bool CTxDB::WriteHashBestChain(uint256 hashBestChain)
+     return Write(string("hashBestChain"), hashBestChain);
+ }
+ 
+-bool CTxDB::ReadBestInvalidWork(CBigNum& bnBestInvalidWork)
++bool CTxDB::ReadBestInvalidTrust(CBigNum& bnBestInvalidTrust)
+ {
+-    return Read(string("bnBestInvalidWork"), bnBestInvalidWork);
++    return Read(string("bnBestInvalidTrust"), bnBestInvalidTrust);
+ }
+ 
+-bool CTxDB::WriteBestInvalidWork(CBigNum bnBestInvalidWork)
++bool CTxDB::WriteBestInvalidTrust(CBigNum bnBestInvalidTrust)
+ {
+-    return Write(string("bnBestInvalidWork"), bnBestInvalidWork);
++    return Write(string("bnBestInvalidTrust"), bnBestInvalidTrust);
++}
++
++bool CTxDB::ReadSyncCheckpoint(uint256& hashCheckpoint)
++{
++    return Read(string("hashSyncCheckpoint"), hashCheckpoint);
++}
++
++bool CTxDB::WriteSyncCheckpoint(uint256 hashCheckpoint)
++{
++    return Write(string("hashSyncCheckpoint"), hashCheckpoint);
++}
++
++bool CTxDB::ReadCheckpointPubKey(string& strPubKey)
++{
++    return Read(string("strCheckpointPubKey"), strPubKey);
++}
++
++bool CTxDB::WriteCheckpointPubKey(const string& strPubKey)
++{
++    return Write(string("strCheckpointPubKey"), strPubKey);
++}
++
++bool CTxDB::ReadV04UpgradeTime(unsigned int& nUpgradeTime)
++{
++    return Read(string("nProtocolV04UpgradeTime"), nUpgradeTime);
++}
++
++bool CTxDB::WriteV04UpgradeTime(const unsigned int& nUpgradeTime)
++{
++    return Write(string("nProtocolV04UpgradeTime"), nUpgradeTime);
+ }
+ 
+ CBlockIndex static * InsertBlockIndex(uint256 hash)
+@@ -555,6 +589,13 @@ bool CTxDB::LoadBlockIndex()
+             pindexNew->nFile          = diskindex.nFile;
+             pindexNew->nBlockPos      = diskindex.nBlockPos;
+             pindexNew->nHeight        = diskindex.nHeight;
++            pindexNew->nMint          = diskindex.nMint;
++            pindexNew->nMoneySupply   = diskindex.nMoneySupply;
++            pindexNew->nFlags         = diskindex.nFlags;
++            pindexNew->nStakeModifier = diskindex.nStakeModifier;
++            pindexNew->prevoutStake   = diskindex.prevoutStake;
++            pindexNew->nStakeTime     = diskindex.nStakeTime;
++            pindexNew->hashProofOfStake = diskindex.hashProofOfStake;
+             pindexNew->nVersion       = diskindex.nVersion;
+             pindexNew->hashMerkleRoot = diskindex.hashMerkleRoot;
+             pindexNew->nTime          = diskindex.nTime;
+@@ -567,6 +608,10 @@ bool CTxDB::LoadBlockIndex()
+ 
+             if (!pindexNew->CheckIndex())
+                 return error("LoadBlockIndex() : CheckIndex failed at %d", pindexNew->nHeight);
++
++            // ppcoin: build setStakeSeen
++            if (pindexNew->IsProofOfStake())
++                setStakeSeen.insert(make_pair(pindexNew->prevoutStake, pindexNew->nStakeTime));
+         }
+         else
+         {
+@@ -582,7 +627,7 @@ bool CTxDB::LoadBlockIndex()
+     if (fRequestShutdown)
+         return true;
+ 
+-    // Calculate bnChainWork
++    // Calculate bnChainTrust
+     vector<pair<int, CBlockIndex*> > vSortedByHeight;
+     vSortedByHeight.reserve(mapBlockIndex.size());
+     BOOST_FOREACH(const PAIRTYPE(uint256, CBlockIndex*)& item, mapBlockIndex)
+@@ -594,7 +639,11 @@ bool CTxDB::LoadBlockIndex()
+     BOOST_FOREACH(const PAIRTYPE(int, CBlockIndex*)& item, vSortedByHeight)
+     {
+         CBlockIndex* pindex = item.second;
+-        pindex->bnChainWork = (pindex->pprev ? pindex->pprev->bnChainWork : 0) + pindex->GetBlockWork();
++        pindex->bnChainTrust = (pindex->pprev ? pindex->pprev->bnChainTrust : 0) + pindex->GetBlockTrust();
++        // ppcoin: calculate stake modifier checksum
++        pindex->nStakeModifierChecksum = GetStakeModifierChecksum(pindex);
++        if (!CheckStakeModifierCheckpoints(pindex->nHeight, pindex->nStakeModifierChecksum))
++            return error("CTxDB::LoadBlockIndex() : Failed stake modifier checkpoint height=%d, modifier=0x%016"PRI64x, pindex->nHeight, pindex->nStakeModifier);
+     }
+ 
+     // Load hashBestChain pointer to end of best chain
+@@ -608,11 +657,16 @@ bool CTxDB::LoadBlockIndex()
+         return error("CTxDB::LoadBlockIndex() : hashBestChain not found in the block index");
+     pindexBest = mapBlockIndex[hashBestChain];
+     nBestHeight = pindexBest->nHeight;
+-    bnBestChainWork = pindexBest->bnChainWork;
+-    printf("LoadBlockIndex(): hashBestChain=%s  height=%d\n", hashBestChain.ToString().substr(0,20).c_str(), nBestHeight);
++    bnBestChainTrust = pindexBest->bnChainTrust;
++    printf("LoadBlockIndex(): hashBestChain=%s  height=%d  trust=%s\n", hashBestChain.ToString().substr(0,20).c_str(), nBestHeight, bnBestChainTrust.ToString().c_str());
++
++    // ppcoin: load hashSyncCheckpoint
++    if (!ReadSyncCheckpoint(Checkpoints::hashSyncCheckpoint))
++        return error("CTxDB::LoadBlockIndex() : hashSyncCheckpoint not loaded");
++    printf("LoadBlockIndex(): synchronized checkpoint %s\n", Checkpoints::hashSyncCheckpoint.ToString().c_str());
+ 
+-    // Load bnBestInvalidWork, OK if it doesn't exist
+-    ReadBestInvalidWork(bnBestInvalidWork);
++    // Load bnBestInvalidTrust, OK if it doesn't exist
++    ReadBestInvalidTrust(bnBestInvalidTrust);
+ 
+     // Verify blocks in the best chain
+     int nCheckLevel = GetArg("-checklevel", 1);
+diff --git a/src/db.h b/src/db.h
+index acb531f..9f08bfa 100644

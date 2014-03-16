@@ -1,0 +1,14 @@
+--- a/src/qt/forms/qrcodedialog.ui
++++ b/src/qt/forms/qrcodedialog.ui
+@@ -102,7 +102,7 @@
+                </sizepolicy>
+               </property>
+               <property name="text">
+-               <string>BTC</string>
++               <string>PPC</string>
+               </property>
+               <property name="buddy">
+                <cstring>lnReqAmount</cstring>
+diff --git a/src/qt/forms/rpcconsole.ui b/src/qt/forms/rpcconsole.ui
+new file mode 100644
+index 0000000..d8e2aac
