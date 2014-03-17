@@ -77,7 +77,7 @@ void CTxOut::print() const
 {
     LogPrintf("%s\n", ToString());
 }
-
+    
 uint256 CTransaction::GetHash() const
 {
     return SerializeHash(*this);
@@ -146,9 +146,11 @@ double CTransaction::ComputePriority(double dPriorityInputs, unsigned int nTxSiz
 std::string CTransaction::ToString() const
 {
     std::string str;
-    str += strprintf("CTransaction(hash=%s, ver=%d, vin.size=%"PRIszu", vout.size=%"PRIszu", nLockTime=%u)\n",
+    str += IsCoinBase()? "Coinbase" : (IsCoinStake()? "Coinstake" : "CTransaction");
+    str += strprintf("(hash=%s, nTime=%d, ver=%d, vin.size=%"PRIszu", vout.size=%"PRIszu", nLockTime=%d)\n",
         GetHash().ToString().substr(0,10),
         nVersion,
+        nTime,
         vin.size(),
         vout.size(),
         nLockTime);

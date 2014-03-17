@@ -48,6 +48,9 @@ public:
 
     std::string ToString() const;
     void print() const;
+
+    //Peercoin-CE
+    bool GetCoinAge(CTxDB& txdb, uint64& nCoinAge) const;
 };
 
 /** An inpoint - a combination of a transaction and an index n into its vin */
@@ -486,6 +489,10 @@ public:
     // network and disk
     std::vector<CTransaction> vtx;
 
+    //Peercon-CE
+    // ppcoin: block signature - signed by coin base txout[0]'s owner
+    std::vector<unsigned char> vchBlockSig;
+
     // memory only
     mutable std::vector<uint256> vMerkleTree;
 
@@ -504,6 +511,7 @@ public:
     (
         READWRITE(*(CBlockHeader*)this);
         READWRITE(vtx);
+        READWRITE(vchBlockSig);
     )
 
     void SetNull()
@@ -511,6 +519,7 @@ public:
         CBlockHeader::SetNull();
         vtx.clear();
         vMerkleTree.clear();
+        vchBlockSig.clear()
     }
 
     CBlockHeader GetBlockHeader() const
