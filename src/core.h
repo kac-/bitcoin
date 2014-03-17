@@ -12,6 +12,8 @@
 
 #include <stdint.h>
 
+#include "peercoin_port.h"
+
 class CTransaction;
 
 /** No amount larger than this (in satoshi) is valid */
