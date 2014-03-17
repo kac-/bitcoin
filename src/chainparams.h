@@ -8,6 +8,7 @@
 
 #include "bignum.h"
 #include "uint256.h"
+#include "util.h" //Peercoin-CE // for GetAdjustedTime
 
 #include <vector>
 
@@ -53,7 +54,7 @@ public:
     };
 
     const uint256& HashGenesisBlock() const { return hashGenesisBlock; }
-    const MessageStartChars& MessageStart() const { return pchMessageStart; }
+    const MessageStartChars& MessageStart(bool fPersistent=false) const { return (fPersistent || GetAdjustedTime() > nMessageStartSwitchTime)? pchMessageStart : pchMessageStartOld; }
     const vector<unsigned char>& AlertKey() const { return vAlertPubKey; }
     int GetDefaultPort() const { return nDefaultPort; }
     const CBigNum& ProofOfWorkLimit() const { return bnProofOfWorkLimit; }
@@ -70,7 +71,7 @@ protected:
     CChainParams() {}
 
     uint256 hashGenesisBlock;
-    MessageStartChars pchMessageStart;
+    MessageStartChars pchMessageStart, pchMessageStartOld;
     // Raw pub key bytes for the broadcast alert signing key.
     vector<unsigned char> vAlertPubKey;
     int nDefaultPort;
@@ -80,6 +81,7 @@ protected:
     string strDataDir;
     vector<CDNSSeedData> vSeeds;
     std::vector<unsigned char> base58Prefixes[MAX_BASE58_TYPES];
+    unsigned int nMessageStartSwitchTime;
 };
 
 /**

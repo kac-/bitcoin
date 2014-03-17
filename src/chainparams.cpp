@@ -103,13 +103,18 @@ public:
         // The message start string is designed to be unlikely to occur in normal data.
         // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
         // a large 4-byte int at any alignment.
-        pchMessageStart[0] = 0xf9;
-        pchMessageStart[1] = 0xbe;
-        pchMessageStart[2] = 0xb4;
-        pchMessageStart[3] = 0xd9;
+        nMessageStartSwitchTime = 1347300000
+        pchMessageStartOld[0] = 0xf9;
+        pchMessageStartOld[1] = 0xbe;
+        pchMessageStartOld[2] = 0xb4;
+        pchMessageStartOld[3] = 0xd9;
+        pchMessageStart[0] = 0xe6;
+        pchMessageStart[1] = 0xe8;
+        pchMessageStart[2] = 0xe9;
+        pchMessageStart[3] = 0xe5;
         vAlertPubKey = ParseHex("04a0a849dd49b113d3179a332dd77715c43be4d0076e2f19e66de23dd707e56630f792f298dfd209bf042bb3561f4af6983f3d81e439737ab0bf7f898fecd21aab");
-        nDefaultPort = 8333;
-        nRPCPort = 8332;
+        nDefaultPort = 9901;
+        nRPCPort = 9902;
         bnProofOfWorkLimit = CBigNum(~uint256(0) >> 32);
         nSubsidyHalvingInterval = 210000;
 
@@ -139,16 +144,15 @@ public:
         hashGenesisBlock = genesis.GetHash();
         assert(hashGenesisBlock == uint256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         assert(genesis.hashMerkleRoot == uint256("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+        hashGenesisBlock = uint256("0x0000000032fe677166d54963b62a4677d8957e87c508eaa4fd7eb1c880cd27e3");//Peercoin-CE
 
-        vSeeds.push_back(CDNSSeedData("bitcoin.sipa.be", "seed.bitcoin.sipa.be"));
-        vSeeds.push_back(CDNSSeedData("bluematt.me", "dnsseed.bluematt.me"));
-        vSeeds.push_back(CDNSSeedData("dashjr.org", "dnsseed.bitcoin.dashjr.org"));
-        vSeeds.push_back(CDNSSeedData("bitcoinstats.com", "seed.bitcoinstats.com"));
-        vSeeds.push_back(CDNSSeedData("xf2.org", "bitseed.xf2.org"));
+        vSeeds.push_back(CDNSSeedData("seed", "seed.ppcoin.net"));
+        vSeeds.push_back(CDNSSeedData("seedppc", "seedppc.ppcoin.net"));
+        vSeeds.push_back(CDNSSeedData("altcointech", "dnsseed.ppc.altcointech.net"));
 
-        base58Prefixes[PUBKEY_ADDRESS] = list_of(0);
-        base58Prefixes[SCRIPT_ADDRESS] = list_of(5);
-        base58Prefixes[SECRET_KEY] =     list_of(128);
+        base58Prefixes[PUBKEY_ADDRESS] = list_of(55);
+        base58Prefixes[SCRIPT_ADDRESS] = list_of(117);
+        base58Prefixes[SECRET_KEY] =     list_of(128 + 55);
         base58Prefixes[EXT_PUBLIC_KEY] = list_of(0x04)(0x88)(0xB2)(0x1E);
         base58Prefixes[EXT_SECRET_KEY] = list_of(0x04)(0x88)(0xAD)(0xE4);
 
@@ -190,13 +194,18 @@ public:
         // The message start string is designed to be unlikely to occur in normal data.
         // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
         // a large 4-byte int at any alignment.
-        pchMessageStart[0] = 0x0b;
-        pchMessageStart[1] = 0x11;
-        pchMessageStart[2] = 0x09;
-        pchMessageStart[3] = 0x07;
-        vAlertPubKey = ParseHex("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a");
-        nDefaultPort = 18333;
-        nRPCPort = 18332;
+        nMessageStartSwitchTime = 1346200000
+        pchMessageStartOld[0] = 0xdb;
+        pchMessageStartOld[1] = 0xe1;
+        pchMessageStartOld[2] = 0xf2;
+        pchMessageStartOld[3] = 0xf6;
+        pchMessageStart[0] = 0xcb;
+        pchMessageStart[1] = 0xf2;
+        pchMessageStart[2] = 0xc0;
+        pchMessageStart[3] = 0xef;
+        vAlertPubKey = ParseHex("04a0a849dd49b113d3179a332dd77715c43be4d0076e2f19e66de23dd707e56630f792f298dfd209bf042bb3561f4af6983f3d81e439737ab0bf7f898fecd21aab");
+        nDefaultPort = 9903;
+        nRPCPort = 9904;
         strDataDir = "testnet3";
 
         // Modify the testnet genesis block so the timestamp is valid for a later start.
@@ -204,15 +213,16 @@ public:
         genesis.nNonce = 414098458;
         hashGenesisBlock = genesis.GetHash();
         assert(hashGenesisBlock == uint256("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
+        hashGenesisBlock = uint256("0x00000001f757bb737f6596503e17cd17b0658ce630cc727c0cca81aec47c9f06");//Peercoin-CE
 
         vFixedSeeds.clear();
         vSeeds.clear();
-        vSeeds.push_back(CDNSSeedData("bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org"));
-        vSeeds.push_back(CDNSSeedData("bluematt.me", "testnet-seed.bluematt.me"));
+        vSeeds.push_back(CDNSSeedData("tnseed", "tnseed.ppcoin.net"));
+        vSeeds.push_back(CDNSSeedData("tnseedppc", "tnseedppc.ppcoin.net"));
 
         base58Prefixes[PUBKEY_ADDRESS] = list_of(111);
         base58Prefixes[SCRIPT_ADDRESS] = list_of(196);
-        base58Prefixes[SECRET_KEY]     = list_of(239);
+        base58Prefixes[SECRET_KEY]     = list_of(128 + 111);
         base58Prefixes[EXT_PUBLIC_KEY] = list_of(0x04)(0x35)(0x87)(0xCF);
         base58Prefixes[EXT_SECRET_KEY] = list_of(0x04)(0x35)(0x83)(0x94);
     }
