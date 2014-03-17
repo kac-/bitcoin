@@ -737,7 +737,7 @@ public:
     unsigned int nUndoPos;
 
     // (memory only) Total amount of work (expected number of hashes) in the chain up to and including this block
-    uint256 nChainWork;
+    uint256 nChainTrust; // ppcoin: trust score of block chain
 
     // Number of transactions in this block.
     // Note: in a potential headers-first mode, this number cannot be relied upon
@@ -759,6 +759,27 @@ public:
     // (memory only) Sequencial id assigned to distinguish order in which blocks are received.
     uint32_t nSequenceId;
 
+    //Peercoin-CE
+    int64_t nMint;
+    int64_t nMoneySupply;
+
+    unsigned int nFlags; // ppcoin: block index flags
+    enum
+    {
+        BLOCK_PROOF_OF_STAKE = (1 << 0), // is proof-of-stake block
+        BLOCK_STAKE_ENTROPY = (1 << 1), // entropy bit for stake modifier
+        BLOCK_STAKE_MODIFIER = (1 << 2), // regenerated stake modifier
+    };
+
+    uint64_t nStakeModifier; // hash modifier for proof-of-stake
+    unsigned int nStakeModifierChecksum; // checksum of index; in-memeory only
+
+    // proof-of-stake specific fields
+    COutPoint prevoutStake;
+    unsigned int nStakeTime;
+    uint256 hashProofOfStake;
+    //!Peercoin-CE
+
     CBlockIndex()
     {
         phashBlock = NULL;
@@ -767,7 +788,15 @@ public:
         nFile = 0;
         nDataPos = 0;
         nUndoPos = 0;
-        nChainWork = 0;
+
+        nChainTrust = 0;
+        nMint = 0;
+        nMoneySupply = 0;
+        nFlags = 0;
+        nStakeModifier = 0;
+        nStakeModifierChecksum = 0;
+        hashProofOfStake = 0;
+
         nTx = 0;
         nChainTx = 0;
         nStatus = 0;
@@ -780,7 +809,7 @@ public:
         nNonce         = 0;
     }
 
-    CBlockIndex(CBlockHeader& block)
+    CBlockIndex(CBlock& block)
     {
         phashBlock = NULL;
         pprev = NULL;
@@ -788,7 +817,28 @@ public:
         nFile = 0;
         nDataPos = 0;
         nUndoPos = 0;
-        nChainWork = 0;
+    
+        //Peercoin-CE
+        nChainTrust = 0;
+        nMint = 0;
+        nMoneySupply = 0;
+        nFlags = 0;
+        nStakeModifier = 0;
+        nStakeModifierChecksum = 0;
+        hashProofOfStake = 0;
+        if (block.IsProofOfStake())
+        {
+            SetProofOfStake();
+            prevoutStake = block.vtx[1].vin[0].prevout;
+            nStakeTime = block.vtx[1].nTime;
+        }
+        else
+        {
+            prevoutStake.SetNull();
+            nStakeTime = 0;
+        }
+        //!Peercoin-CE
+
         nTx = 0;
         nChainTx = 0;
         nStatus = 0;
@@ -842,18 +892,18 @@ public:
         return (int64_t)nTime;
     }
 
-    CBigNum GetBlockWork() const
+    CBigNum GetBlockTrust() const
     {
         CBigNum bnTarget;
         bnTarget.SetCompact(nBits);
         if (bnTarget <= 0)
             return 0;
-        return (CBigNum(1)<<256) / (bnTarget+1);
+        return (IsProofOfStake()? (CBigNum(1)<<256) / (bnTarget+1) : 1);
     }
 
     bool CheckIndex() const
     {
-        return CheckProofOfWork(GetBlockHash(), nBits);
+        return IsProofOfWork() ? CheckProofOfWork(GetBlockHash(), nBits) : true;
     }
 
     enum { nMedianTimeSpan=11 };
@@ -881,10 +931,67 @@ public:
     static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart,
                                 unsigned int nRequired, unsigned int nToCheck);
 
+    bool IsProofOfWork() const
+    {
+        return !(nFlags & BLOCK_PROOF_OF_STAKE);
+    }
+
+    bool IsProofOfStake() const
+    {
+        return (nFlags & BLOCK_PROOF_OF_STAKE);
+    }
+
+    void SetProofOfStake()
+    {
+        nFlags |= BLOCK_PROOF_OF_STAKE;
+    }
+
+    unsigned int GetStakeEntropyBit() const
+    {
+        return ((nFlags & BLOCK_STAKE_ENTROPY) >> 1);
+    }
+
+    bool SetStakeEntropyBit(unsigned int nEntropyBit)
+    {
+        if (nEntropyBit > 1)
+            return false;
+        nFlags |= (nEntropyBit? BLOCK_STAKE_ENTROPY : 0);
+        return true;
+    }
+
+    bool GeneratedStakeModifier() const
+    {
+        return (nFlags & BLOCK_STAKE_MODIFIER);
+    }
+
+    void SetStakeModifier(uint64_t nModifier, bool fGeneratedStakeModifier)
+    {
+        nStakeModifier = nModifier;
+        if (fGeneratedStakeModifier)
+            nFlags |= BLOCK_STAKE_MODIFIER;
+    }
+//Peercoin-CE
+#ifndef PRI64d
+#if defined(_MSC_VER) || defined(__MSVCRT__)
+#define PRI64d  "I64d"
+#define PRI64u  "I64u"
+#define PRI64x  "I64x"
+#else
+#define PRI64d  "lld"
+#define PRI64u  "llu"
+#define PRI64x  "llx"
+#endif
+#endif
+//!Peercoin-CE
     std::string ToString() const
     {
-        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
+        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, nMint=%s, nMoneySupply=%s, nFlags=(%s)(%d)(%s), nStakeModifier=%016"PRI64x", nStakeModifierChecksum=%08x, hashProofOfStake=%s, prevoutStake=(%s), nStakeTime=%d, merkle=%s, hashBlock=%s)",
             pprev, nHeight,
+            FormatMoney(nMint).c_str(), FormatMoney(nMoneySupply).c_str(),
+            GeneratedStakeModifier() ? "MOD" : "-", GetStakeEntropyBit(), IsProofOfStake()? "PoS" : "PoW",
+            nStakeModifier, nStakeModifierChecksum,
+            hashProofOfStake.ToString().c_str(),
+            prevoutStake.ToString().c_str(), nStakeTime,
             hashMerkleRoot.ToString().c_str(),
             GetBlockHash().ToString().c_str());
     }
@@ -919,6 +1026,20 @@ public:
         READWRITE(VARINT(nHeight));
         READWRITE(VARINT(nStatus));
         READWRITE(VARINT(nTx));
+
+        //Peercoin-CE
+        READWRITE(nMint);
+        READWRITE(nMoneySupply);
+        READWRITE(nFlags);
+        READWRITE(nStakeModifier);
+        if (IsProofOfStake())
+        {
+            READWRITE(prevoutStake);
+            READWRITE(nStakeTime);
+            READWRITE(hashProofOfStake);
+        }
+        //!Peercoin-CE
+
         if (nStatus & (BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO))
             READWRITE(VARINT(nFile));
         if (nStatus & BLOCK_HAVE_DATA)

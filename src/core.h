@@ -50,7 +50,7 @@ public:
     void print() const;
 
     //Peercoin-CE
-    bool GetCoinAge(CTxDB& txdb, uint64& nCoinAge) const;
+    bool GetCoinAge(CTxDB& txdb, uint64_t& nCoinAge) const;
 };
 
 /** An inpoint - a combination of a transaction and an index n into its vin */
@@ -519,7 +519,7 @@ public:
         CBlockHeader::SetNull();
         vtx.clear();
         vMerkleTree.clear();
-        vchBlockSig.clear()
+        vchBlockSig.clear();
     }
 
     CBlockHeader GetBlockHeader() const
@@ -545,6 +545,36 @@ public:
     std::vector<uint256> GetMerkleBranch(int nIndex) const;
     static uint256 CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex);
     void print() const;
+
+    //Peercoin-CE
+    // ppcoin: two types of block: proof-of-work or proof-of-stake
+    bool IsProofOfStake() const
+    {
+        return (vtx.size() > 1 && vtx[1].IsCoinStake());
+    }
+
+    bool IsProofOfWork() const
+    {
+        return !IsProofOfStake();
+    }
+
+    std::pair<COutPoint, unsigned int> GetProofOfStake() const
+    {
+        return IsProofOfStake()? std::make_pair(vtx[1].vin[0].prevout, vtx[1].nTime) : std::make_pair(COutPoint(), (unsigned int)0);
+    }
+
+    // ppcoin: get max transaction timestamp
+    int64_t GetMaxTransactionTime() const
+    {
+        int64_t maxTransactionTime = 0;
+        BOOST_FOREACH(const CTransaction& tx, vtx)
+            maxTransactionTime = std::max(maxTransactionTime, (int64_t)tx.nTime);
+        return maxTransactionTime;
+    }
+    bool GetCoinAge(uint64_t& nCoinAge) const; // ppcoin: calculate total coin age spent in block
+    bool SignBlock(const CKeyStore& keystore);
+    bool CheckBlockSignature() const;
+    unsigned int GetStakeEntropyBit() const; // ppcoin: entropy bit for stake modifier if chosen by modifier
 };
 
 
