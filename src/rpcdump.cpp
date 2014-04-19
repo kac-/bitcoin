@@ -83,6 +83,46 @@ Value importprivkey(const Array& params, bool fHelp)
     return Value::null;
 }
 
+Value pubimportkey(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 2)
+        throw runtime_error(
+            "pubimportkey <ppcoinpubkey> [label]\n"
+            "Adds a public key to your pub-wallet.");
+
+    string strSecret = params[0].get_str();
+    string strLabel = "";
+    if (params.size() > 1)
+        strLabel = params[1].get_str();
+
+    if (pwalletPub->IsLocked())
+        throw JSONRPCError(-13, "Error: Please enter the wallet passphrase with walletpassphrase first.");
+    if (fWalletUnlockMintOnly) // ppcoin: no importprivkey in mint-only mode
+        throw JSONRPCError(-102, "Wallet is unlocked for minting only.");
+
+    CPKey key;
+    key.SetPubKey(ParseHex(strSecret));
+    key.SetCompressed(true);
+    CBitcoinAddress vchAddress = CBitcoinAddress(key.GetPubKey());
+
+    {
+        LOCK2(cs_main, pwalletPub->cs_wallet);
+
+        pwalletPub->MarkDirty();
+        pwalletPub->SetAddressBookName(vchAddress, strLabel);
+
+        if (!pwalletPub->AddPKey(key))
+            throw JSONRPCError(-4,"Error adding key to wallet");
+
+        pwalletPub->ScanForWalletTransactions(pindexGenesisBlock, true);
+        pwalletPub->ReacceptWalletTransactions();
+    }
+
+    MainFrameRepaint();
+
+    return vchAddress.ToString();
+}
+
 Value dumpprivkey(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)

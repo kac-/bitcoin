@@ -250,6 +250,18 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
                     return DB_CORRUPT;
                 }
             }
+            else if (strType == "pkey")
+            {
+                vector<unsigned char> vchPubKey;
+                ssKey >> vchPubKey;
+                CPKey key;
+                key.SetPubKey(vchPubKey);
+                if (!pwallet->LoadKey(key))
+                {
+                    printf("Error reading wallet database: LoadKey(p) failed\n");
+                    return DB_CORRUPT;
+                }
+            }
             else if (strType == "mkey")
             {
                 unsigned int nID;

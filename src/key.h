@@ -75,11 +75,11 @@ public:
 
     void MakeNewKey(bool fCompressed);
     bool SetPrivKey(const CPrivKey& vchPrivKey);
-    bool SetSecret(const CSecret& vchSecret, bool fCompressed = false);
-    CSecret GetSecret(bool &fCompressed) const;
-    CPrivKey GetPrivKey() const;
-    bool SetPubKey(const std::vector<unsigned char>& vchPubKey);
-    std::vector<unsigned char> GetPubKey() const;
+    virtual bool SetSecret(const CSecret& vchSecret, bool fCompressed = false);
+    virtual CSecret GetSecret(bool &fCompressed) const;
+    virtual CPrivKey GetPrivKey() const;
+    virtual bool SetPubKey(const std::vector<unsigned char>& vchPubKey);
+    virtual std::vector<unsigned char> GetPubKey() const;
 
     bool Sign(uint256 hash, std::vector<unsigned char>& vchSig);
 
@@ -101,6 +101,33 @@ public:
     bool VerifyCompact(uint256 hash, const std::vector<unsigned char>& vchSig);
 
     bool IsValid();
+};
+
+class CPKey : public CKey
+{
+protected:
+	std::vector<unsigned char> vchPubKey;
+public:
+	CSecret GetSecret(bool &fCompressed) const{
+		fCompressed = fCompressedPubKey;
+		return CSecret(0);
+	}
+	CPrivKey GetPrivKey() const{
+		return CPrivKey(0);
+	}
+    bool SetPubKey(const std::vector<unsigned char>& vchPubKey){
+		this->vchPubKey = vchPubKey;
+		return true;
+	}
+	void SetCompressed(bool compressed){
+		fCompressedPubKey = compressed;
+	}
+	std::vector<unsigned char> GetPubKey() const{
+		return this->vchPubKey;
+	}
+	bool SetSecret(const CSecret& vchSecret, bool fCompressed = false){
+		return true;
+	}
 };
 
 #endif

@@ -24,6 +24,7 @@ using namespace std;
 using namespace boost;
 
 CWallet* pwalletMain;
+CWallet* pwalletPub;
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -72,7 +73,9 @@ void Shutdown(void* parg)
         DBFlush(true);
         boost::filesystem::remove(GetPidFile());
         UnregisterWallet(pwalletMain);
+        UnregisterWallet(pwalletPub);
         delete pwalletMain;
+        delete pwalletPub;
         CreateThread(ExitTimeout, NULL);
         Sleep(50);
         printf("PPCoin exiting\n\n");
@@ -439,6 +442,28 @@ bool AppInit2(int argc, char* argv[])
     printf(" wallet      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
 
     RegisterWallet(pwalletMain);
+
+{// public wallet
+    pwalletPub = new CWallet("public-wallet.dat");
+    nLoadWalletRet = pwalletPub->LoadWallet(fFirstRun);
+	if (nLoadWalletRet != DB_LOAD_OK)
+	{
+		if (nLoadWalletRet == DB_CORRUPT)
+            strErrors << "Error loading wallet.dat: Wallet corrupted" << "\n";
+        else if (nLoadWalletRet == DB_TOO_NEW)
+            strErrors << "Error loading wallet.dat: Wallet requires newer version of PPCoin" << "\n";
+        else if (nLoadWalletRet == DB_NEED_REWRITE)
+        {
+            strErrors << "Wallet needed to be rewritten: restart PPCoin to complete" << "\n";
+            cout << strErrors << endl;
+            ThreadSafeMessageBox(strErrors.str(), "PPCoin", wxOK | wxICON_ERROR | wxMODAL);
+            return false;
+        }
+        else
+            strErrors << "Error loading wallet.dat" << "\n";
+    }
+    RegisterWallet(pwalletPub);
+}
 
     CBlockIndex *pindexRescan = pindexBest;
     if (GetBoolArg("-rescan"))
