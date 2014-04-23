@@ -72,6 +72,13 @@ public:
         return Write(std::make_pair(std::string("key"), vchPubKey.Raw()), vchPrivKey, false);
     }
 
+    bool WritePKey(const CPubKey& vchPubKey)
+    {
+        CPrivKey privKey(0);
+        nWalletDBUpdated++;
+        return Write(std::make_pair(std::string("pkey"), vchPubKey.Raw()), privKey, false);
+    }
+
     bool WriteCryptedKey(const CPubKey& vchPubKey, const std::vector<unsigned char>& vchCryptedSecret, bool fEraseUnencryptedKey = true)
     {
         nWalletDBUpdated++;
