@@ -2802,11 +2802,11 @@ Value getrawtransaction(const Array& params, bool fHelp)
     return result;
 }
 
-Value listunspent(const Array& params, bool fHelp)
+Value _listunspent(const Array& params, bool fHelp, bool mainWallet)
 {
     if (fHelp || params.size() > 3)
         throw runtime_error(
-            "listunspent [minconf=1] [maxconf=9999999]  [\"address\",...]\n"
+            string(mainWallet?"":"pub")+"listunspent [minconf=1] [maxconf=9999999]  [\"address\",...]\n"
             "Returns array of unspent transaction outputs\n"
             "with between minconf and maxconf (inclusive) confirmations.\n"
             "Optionally filtered to only include txouts paid to specified addresses.\n"
@@ -2838,7 +2838,7 @@ Value listunspent(const Array& params, bool fHelp)
 
     Array results;
     vector<COutput> vecOutputs;
-    pwalletMain->AvailableCoins(vecOutputs, false);
+    (mainWallet ? pwalletMain : pwalletPub)->AvailableCoins(vecOutputs, false);
     BOOST_FOREACH(const COutput& out, vecOutputs)
     {
         if (out.nDepth < nMinDepth || out.nDepth > nMaxDepth)
@@ -2866,6 +2866,16 @@ Value listunspent(const Array& params, bool fHelp)
     }
 
     return results;
+}
+
+Value listunspent(const Array& params, bool fHelp)
+{
+    return _listunspent(params, fHelp, true);
+}
+
+Value publistunspent(const Array& params, bool fHelp)
+{
+    return _listunspent(params, fHelp, false);
 }
 
 Value createrawtransaction(const Array& params, bool fHelp)
@@ -3267,6 +3277,7 @@ static const CRPCCommand vRPCCommands[] =
     { "pubimportkey",           &pubimportkey,           false},
     { "pubgettransaction",      &pubgettransaction,      false},
     { "listunspent",            &listunspent,            false},
+    { "publistunspent",         &publistunspent,         false},
     { "getrawtransaction",      &getrawtransaction,      false},
     { "createrawtransaction",   &createrawtransaction,   false},
     { "decoderawtransaction",   &decoderawtransaction,   false},
@@ -3923,6 +3934,9 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "listunspent"            && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "listunspent"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "listunspent"            && n > 2) ConvertTo<Array>(params[2]);
+    if (strMethod == "publistunspent"         && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "publistunspent"         && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "publistunspent"         && n > 2) ConvertTo<Array>(params[2]);
     if (strMethod == "getrawtransaction"      && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "createrawtransaction"   && n > 0) ConvertTo<Array>(params[0]);
     if (strMethod == "createrawtransaction"   && n > 1) ConvertTo<Object>(params[1]);
