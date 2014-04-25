@@ -730,11 +730,11 @@ Value getaccountaddress(const Array& params, bool fHelp)
 
 
 
-Value setaccount(const Array& params, bool fHelp)
+Value _setaccount(const Array& params, bool fHelp, bool mainWallet)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
-            "setaccount <ppcoinaddress> <account>\n"
+            string(mainWallet?"":"pub")+"setaccount <ppcoinaddress> <account>\n"
             "Sets the account associated with the given address.");
 
     CBitcoinAddress address(params[0].get_str());
@@ -746,19 +746,29 @@ Value setaccount(const Array& params, bool fHelp)
     if (params.size() > 1)
         strAccount = AccountFromValue(params[1]);
 
+    CWallet* pwallet = mainWallet ? pwalletMain : pwalletPub;
     // Detect when changing the account of an address that is the 'unused current key' of another account:
-    if (pwalletMain->mapAddressBook.count(address.Get()))
+    if (pwallet->mapAddressBook.count(address.Get()))
     {
-        string strOldAccount = pwalletMain->mapAddressBook[address.Get()];
+        string strOldAccount = pwallet->mapAddressBook[address.Get()];
         if (address == GetAccountAddress(strOldAccount))
             GetAccountAddress(strOldAccount, true);
     }
 
-    pwalletMain->SetAddressBookName(address.Get(), strAccount);
+    pwallet->SetAddressBookName(address.Get(), strAccount);
 
     return Value::null;
 }
 
+Value setaccount(const Array& params, bool fHelp)
+{
+    return _setaccount(params, fHelp, true);
+}
+
+Value pubsetaccount(const Array& params, bool fHelp)
+{
+    return _setaccount(params, fHelp, false);
+}
 
 Value getaccount(const Array& params, bool fHelp)
 {
@@ -779,18 +789,18 @@ Value getaccount(const Array& params, bool fHelp)
 }
 
 
-Value getaddressesbyaccount(const Array& params, bool fHelp)
+Value _getaddressesbyaccount(const Array& params, bool fHelp, bool mainWallet)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "getaddressesbyaccount <account>\n"
+            string(mainWallet?"":"pub")+"getaddressesbyaccount <account>\n"
             "Returns the list of addresses for the given account.");
 
     string strAccount = AccountFromValue(params[0]);
 
     // Find all addresses that have the given account
     Array ret;
-    BOOST_FOREACH(const PAIRTYPE(CBitcoinAddress, string)& item, pwalletMain->mapAddressBook)
+    BOOST_FOREACH(const PAIRTYPE(CBitcoinAddress, string)& item, (mainWallet?pwalletMain:pwalletPub)->mapAddressBook)
     {
         const CBitcoinAddress& address = item.first;
         const string& strName = item.second;
@@ -798,6 +808,16 @@ Value getaddressesbyaccount(const Array& params, bool fHelp)
             ret.push_back(address.ToString());
     }
     return ret;
+}
+
+Value getaddressesbyaccount(const Array& params, bool fHelp)
+{
+    return _getaddressesbyaccount(params, fHelp, true);
+}
+
+Value pubgetaddressesbyaccount(const Array& params, bool fHelp)
+{
+    return _getaddressesbyaccount(params, fHelp, false);
 }
 
 Value settxfee(const Array& params, bool fHelp)
@@ -1490,11 +1510,11 @@ void AcentryToJSON(const CAccountingEntry& acentry, const string& strAccount, Ar
     }
 }
 
-Value listtransactions(const Array& params, bool fHelp)
+Value _listtransactions(const Array& params, bool fHelp, bool mainWallet)
 {
     if (fHelp || params.size() > 3)
         throw runtime_error(
-            "listtransactions [account] [count=10] [from=0]\n"
+            string(mainWallet?"":"pub")+"listtransactions [account] [count=10] [from=0]\n"
             "Returns up to [count] most recent transactions skipping the first [from] transactions for account [account].");
 
     string strAccount = "*";
@@ -1512,8 +1532,9 @@ Value listtransactions(const Array& params, bool fHelp)
     if (nFrom < 0)
         throw JSONRPCError(-8, "Negative from");
 
+    CWallet* pwallet = mainWallet ? pwalletMain : pwalletPub;
     Array ret;
-    CWalletDB walletdb(pwalletMain->strWalletFile);
+    CWalletDB walletdb(pwallet->strWalletFile);
 
     // First: get all CWalletTx and CAccountingEntry into a sorted-by-time multimap.
     typedef pair<CWalletTx*, CAccountingEntry*> TxPair;
@@ -1522,7 +1543,7 @@ Value listtransactions(const Array& params, bool fHelp)
 
     // Note: maintaining indices in the database of (account,time) --> txid and (account, time) --> acentry
     // would make this much faster for applications that do this a lot.
-    for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
+    for (map<uint256, CWalletTx>::iterator it = pwallet->mapWallet.begin(); it != pwallet->mapWallet.end(); ++it)
     {
         CWalletTx* wtx = &((*it).second);
         txByTime.insert(make_pair(wtx->GetTxTime(), TxPair(wtx, (CAccountingEntry*)0)));
@@ -1565,24 +1586,26 @@ Value listtransactions(const Array& params, bool fHelp)
     return ret;
 }
 
-Value listaccounts(const Array& params, bool fHelp)
+Value _listaccounts(const Array& params, bool fHelp, bool mainWallet)
 {
     if (fHelp || params.size() > 1)
         throw runtime_error(
-            "listaccounts [minconf=1]\n"
+            string(mainWallet?"":"pub")+"listaccounts [minconf=1]\n"
             "Returns Object that has account names as keys, account balances as values.");
 
     int nMinDepth = 1;
     if (params.size() > 0)
         nMinDepth = params[0].get_int();
 
+     CWallet* pwallet = mainWallet? pwalletMain : pwalletPub;
+
     map<string, int64> mapAccountBalances;
-    BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& entry, pwalletMain->mapAddressBook) {
-        if (IsMine(*pwalletMain, entry.first)) // This address belongs to me
+    BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& entry, pwallet->mapAddressBook) {
+        if (IsMine(*pwallet, entry.first)) // This address belongs to me
             mapAccountBalances[entry.second] = 0;
     }
 
-    for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
+    for (map<uint256, CWalletTx>::iterator it = pwallet->mapWallet.begin(); it != pwallet->mapWallet.end(); ++it)
     {
         const CWalletTx& wtx = (*it).second;
         int64 nGeneratedImmature, nGeneratedMature, nFee;
@@ -1597,15 +1620,15 @@ Value listaccounts(const Array& params, bool fHelp)
         {
             mapAccountBalances[""] += nGeneratedMature;
             BOOST_FOREACH(const PAIRTYPE(CTxDestination, int64)& r, listReceived)
-                if (pwalletMain->mapAddressBook.count(r.first))
-                    mapAccountBalances[pwalletMain->mapAddressBook[r.first]] += r.second;
+                if (pwallet->mapAddressBook.count(r.first))
+                    mapAccountBalances[pwallet->mapAddressBook[r.first]] += r.second;
                 else
                     mapAccountBalances[""] += r.second;
         }
     }
 
     list<CAccountingEntry> acentries;
-    CWalletDB(pwalletMain->strWalletFile).ListAccountCreditDebit("*", acentries);
+    CWalletDB(pwallet->strWalletFile).ListAccountCreditDebit("*", acentries);
     BOOST_FOREACH(const CAccountingEntry& entry, acentries)
         mapAccountBalances[entry.strAccount] += entry.nCreditDebit;
 
@@ -1614,6 +1637,16 @@ Value listaccounts(const Array& params, bool fHelp)
         ret.push_back(Pair(accountBalance.first, ValueFromAmount(accountBalance.second)));
     }
     return ret;
+}
+
+Value listaccounts(const Array& params, bool fHelp)
+{
+    return _listaccounts(params, fHelp, true);
+}
+
+Value publistaccounts(const Array& params, bool fHelp)
+{
+    return _listaccounts(params, fHelp, false);
 }
 
 Value listsinceblock(const Array& params, bool fHelp)
@@ -1679,21 +1712,22 @@ Value listsinceblock(const Array& params, bool fHelp)
     return ret;
 }
 
-Value gettransaction(const Array& params, bool fHelp)
+Value _gettransaction(const Array& params, bool fHelp, bool mainWallet)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "gettransaction <txid>\n"
+            string(mainWallet?"":"pub")+"gettransaction <txid>\n"
             "Get detailed information about <txid>");
 
+    CWallet* pwallet = mainWallet ? pwalletMain : pwalletPub;
     uint256 hash;
     hash.SetHex(params[0].get_str());
 
     Object entry;
 
-    if (!pwalletMain->mapWallet.count(hash))
+    if (!pwallet->mapWallet.count(hash))
         throw JSONRPCError(-5, "Invalid or non-wallet transaction id");
-    const CWalletTx& wtx = pwalletMain->mapWallet[hash];
+    const CWalletTx& wtx = pwallet->mapWallet[hash];
 
     int64 nCredit = wtx.GetCredit();
     int64 nDebit = wtx.GetDebit();
@@ -1704,10 +1738,10 @@ Value gettransaction(const Array& params, bool fHelp)
     if (wtx.IsFromMe())
         entry.push_back(Pair("fee", ValueFromAmount(nFee)));
 
-    WalletTxToJSON(pwalletMain->mapWallet[hash], entry);
+    WalletTxToJSON(pwallet->mapWallet[hash], entry);
 
     Array details;
-    ListTransactions(pwalletMain->mapWallet[hash], "*", 0, false, details);
+    ListTransactions(pwallet->mapWallet[hash], "*", 0, false, details);
     entry.push_back(Pair("details", details));
 
     return entry;
@@ -2656,113 +2690,24 @@ Value createmultisig(const Array& params, bool fHelp)
     return result;
 }
 
+Value listtransactions(const Array& params, bool fHelp)
+{
+    return _listtransactions(params, fHelp, true);
+}
+
 Value publisttransactions(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() > 3)
-        throw runtime_error(
-            "publisttransactions [account] [count=10] [from=0]\n"
-            "Returns up to [count] most recent transactions skipping the first [from] transactions for account [account].");
+    return _listtransactions(params, fHelp, false);
+}
 
-    string strAccount = "*";
-    if (params.size() > 0)
-        strAccount = params[0].get_str();
-    int nCount = 10;
-    if (params.size() > 1)
-        nCount = params[1].get_int();
-    int nFrom = 0;
-    if (params.size() > 2)
-        nFrom = params[2].get_int();
-
-    if (nCount < 0)
-        throw JSONRPCError(-8, "Negative count");
-    if (nFrom < 0)
-        throw JSONRPCError(-8, "Negative from");
-
-    Array ret;
-    CWalletDB walletdb(pwalletPub->strWalletFile);
-
-    // First: get all CWalletTx and CAccountingEntry into a sorted-by-time multimap.
-    typedef pair<CWalletTx*, CAccountingEntry*> TxPair;
-    typedef multimap<int64, TxPair > TxItems;
-    TxItems txByTime;
-
-    // Note: maintaining indices in the database of (account,time) --> txid and (account, time) --> acentry
-    // would make this much faster for applications that do this a lot.
-    for (map<uint256, CWalletTx>::iterator it = pwalletPub->mapWallet.begin(); it != pwalletPub->mapWallet.end(); ++it)
-    {
-        CWalletTx* wtx = &((*it).second);
-        txByTime.insert(make_pair(wtx->GetTxTime(), TxPair(wtx, (CAccountingEntry*)0)));
-    }
-    list<CAccountingEntry> acentries;
-    walletdb.ListAccountCreditDebit(strAccount, acentries);
-    BOOST_FOREACH(CAccountingEntry& entry, acentries)
-    {
-        txByTime.insert(make_pair(entry.nTime, TxPair((CWalletTx*)0, &entry)));
-    }
-
-    // iterate backwards until we have nCount items to return:
-    for (TxItems::reverse_iterator it = txByTime.rbegin(); it != txByTime.rend(); ++it)
-    {
-        CWalletTx *const pwtx = (*it).second.first;
-        if (pwtx != 0)
-            ListTransactions(*pwtx, strAccount, 0, true, ret);
-        CAccountingEntry *const pacentry = (*it).second.second;
-        if (pacentry != 0)
-            AcentryToJSON(*pacentry, strAccount, ret);
-
-        if (ret.size() >= (nCount+nFrom)) break;
-    }
-    // ret is newest to oldest
-
-    if (nFrom > (int)ret.size())
-        nFrom = ret.size();
-    if ((nFrom + nCount) > (int)ret.size())
-        nCount = ret.size() - nFrom;
-    Array::iterator first = ret.begin();
-    std::advance(first, nFrom);
-    Array::iterator last = ret.begin();
-    std::advance(last, nFrom+nCount);
-
-    if (last != ret.end()) ret.erase(last, ret.end());
-    if (first != ret.begin()) ret.erase(ret.begin(), first);
-
-    std::reverse(ret.begin(), ret.end()); // Return oldest to newest
-
-    return ret;
+Value gettransaction(const Array& params, bool fHelp)
+{
+    return _gettransaction(params, fHelp, true);
 }
 
 Value pubgettransaction(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
-        throw runtime_error(
-            "pubgettransaction <txid>\n"
-            "Get detailed information about <txid>");
-
-    uint256 hash;
-    hash.SetHex(params[0].get_str());
-
-    Object entry;
-
-    if (!pwalletPub->mapWallet.count(hash))
-        throw JSONRPCError(-5, "Invalid or non-wallet transaction id");
-    const CWalletTx& wtx = pwalletPub->mapWallet[hash];
-
-    int64 nCredit = wtx.GetCredit();
-    int64 nDebit = wtx.GetDebit();
-    int64 nNet = nCredit - nDebit;
-    int64 nFee = (wtx.IsFromMe() ? wtx.GetValueOut() - nDebit : 0);
-
-    entry.push_back(Pair("amount", ValueFromAmount(nNet - nFee)));
-    if (wtx.IsFromMe())
-        entry.push_back(Pair("fee", ValueFromAmount(nFee)));
-
-    WalletTxToJSON(pwalletPub->mapWallet[hash], entry);
-
-    Array details;
-    ListTransactions(pwalletPub->mapWallet[hash], "*", 0, false, details);
-    entry.push_back(Pair("details", details));
-
-    return entry;
+    return _gettransaction(params, fHelp, false);
 }
 //
 // Raw transactions
@@ -3283,6 +3228,9 @@ static const CRPCCommand vRPCCommands[] =
     { "decoderawtransaction",   &decoderawtransaction,   false},
     { "signrawtransaction",     &signrawtransaction,     false},
     { "sendrawtransaction",     &sendrawtransaction,     false},
+    { "publistaccounts",        &publistaccounts,        false},
+    { "pubgetaddressesbyaccount",&pubgetaddressesbyaccount,  true },
+    { "pubsetaccount",          &pubsetaccount,          true },
 };
 
 CRPCTable::CRPCTable()
@@ -3942,6 +3890,8 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "createrawtransaction"   && n > 1) ConvertTo<Object>(params[1]);
     if (strMethod == "signrawtransaction"     && n > 1) ConvertTo<Array>(params[1]);
     if (strMethod == "signrawtransaction"     && n > 2) ConvertTo<Array>(params[2]);
+    if (strMethod == "publistaccounts"        && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "pubimportkey"           && n > 2) ConvertTo<bool>(params[2]);
     return params;
 }
 

@@ -85,15 +85,18 @@ Value importprivkey(const Array& params, bool fHelp)
 
 Value pubimportkey(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() < 1 || params.size() > 2)
+    if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
-            "pubimportkey <ppcoinpubkey> [label]\n"
+            "pubimportkey <ppcoinpubkey> [label] [rescan]\n"
             "Adds a public key to your pub-wallet.");
 
+    bool fScan = true;
     string strSecret = params[0].get_str();
     string strLabel = "";
     if (params.size() > 1)
         strLabel = params[1].get_str();
+    if (params.size() > 2)
+        fScan = params[2].get_bool();
 
     if (pwalletPub->IsLocked())
         throw JSONRPCError(-13, "Error: Please enter the wallet passphrase with walletpassphrase first.");
@@ -114,8 +117,11 @@ Value pubimportkey(const Array& params, bool fHelp)
         if (!pwalletPub->AddPKey(key))
             throw JSONRPCError(-4,"Error adding key to wallet");
 
-        pwalletPub->ScanForWalletTransactions(pindexGenesisBlock, true);
-        pwalletPub->ReacceptWalletTransactions();
+        if(fScan)
+        {
+            pwalletPub->ScanForWalletTransactions(pindexGenesisBlock, true);
+            pwalletPub->ReacceptWalletTransactions();
+        }
     }
 
     MainFrameRepaint();
