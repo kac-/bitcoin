@@ -247,6 +247,9 @@ bool AppInit2(int argc, char* argv[])
             "  -checkblocks=<n> \t\t  " + _("How many blocks to check at startup (default: 2500, 0 = all)") + "\n" +
             "  -checklevel=<n>  \t\t  " + _("How thorough the block verification is (0-6, default: 1)") + "\n";
 
+        strUsage +=
+            "  -externalip=<ip> \t\t  self defined external ip\n";
+
         strUsage += string() +
             _("\nSSL options: (see the Bitcoin Wiki for SSL setup instructions)") + "\n" +
             "  -rpcssl                                \t  " + _("Use OpenSSL (https) for JSON-RPC connections") + "\n" +

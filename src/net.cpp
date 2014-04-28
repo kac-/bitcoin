@@ -195,6 +195,18 @@ bool GetMyExternalIP(CNetAddr& ipRet)
     if (fNoListen||fUseProxy)
         return false;
 
+    if (mapArgs.count("-externalip"))
+    {
+        CService extIp(mapArgs["-externalip"],0,true);
+        if (!extIp.IsValid())
+        {
+            ThreadSafeMessageBox(_("Invalid -externalip address"), _("PPCcoin"), wxOK | wxMODAL);
+            return false;
+        }
+        ipRet.SetIP(extIp);
+        return true;
+    }
+
     for (int nLookup = 0; nLookup <= 1; nLookup++)
     for (int nHost = 1; nHost <= 2; nHost++)
     {
