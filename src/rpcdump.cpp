@@ -107,7 +107,9 @@ Value pubimportkey(const Array& params, bool fHelp)
     key.SetPubKey(CPubKey(ParseHex(strSecret)));
     key.SetCompressed(true);
     CKeyID vchAddress = key.GetPubKey().GetID();
+    bool isMine = IsMine(*pwalletPub, vchAddress);
 
+    if(!isMine)
     {
         LOCK2(cs_main, pwalletPub->cs_wallet);
 
@@ -116,7 +118,6 @@ Value pubimportkey(const Array& params, bool fHelp)
 
         if (!pwalletPub->AddPKey(key))
             throw JSONRPCError(-4,"Error adding key to wallet");
-
         if(fScan)
         {
             pwalletPub->ScanForWalletTransactions(pindexGenesisBlock, true);
@@ -124,9 +125,15 @@ Value pubimportkey(const Array& params, bool fHelp)
         }
     }
 
-    MainFrameRepaint();
+    //MainFrameRepaint();
+    Object ret;
+    ret.push_back(Pair("added", !isMine));
+    ret.push_back(Pair("address", CBitcoinAddress(vchAddress).ToString()));
+    string account;
+    if (pwalletPub->mapAddressBook.count(vchAddress))
+        ret.push_back(Pair("account", pwalletPub->mapAddressBook[vchAddress]));
 
-    return CBitcoinAddress(vchAddress).ToString();
+    return ret;
 }
 
 Value dumpprivkey(const Array& params, bool fHelp)

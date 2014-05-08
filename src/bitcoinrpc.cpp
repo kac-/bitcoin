@@ -868,6 +868,9 @@ Value sendtoaddress(const Array& params, bool fHelp)
     if (strError != "")
         throw JSONRPCError(-4, strError);
 
+    if (IsMine(*pwalletPub, address.Get()))
+        pwalletPub->AddToWalletIfInvolvingMe(wtx, NULL, true, false);
+
     return wtx.GetHash().GetHex();
 }
 
@@ -1417,7 +1420,7 @@ Value listreceivedbyaccount(const Array& params, bool fHelp)
     return ListReceived(params, true);
 }
 
-void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, Array& ret)
+void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, Array& ret, bool mainWallet = true)
 {
     int64 nGeneratedImmature, nGeneratedMature, nFee;
     string strSentAccount;
@@ -1473,11 +1476,12 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
     // Received
     if (listReceived.size() > 0 && wtx.GetDepthInMainChain() >= nMinDepth)
     {
+        CWallet* pwallet = mainWallet ? pwalletMain : pwalletPub;
         BOOST_FOREACH(const PAIRTYPE(CTxDestination, int64)& r, listReceived)
         {
             string account;
-            if (pwalletMain->mapAddressBook.count(r.first))
-                account = pwalletMain->mapAddressBook[r.first];
+            if (pwallet->mapAddressBook.count(r.first))
+                account = pwallet->mapAddressBook[r.first];
             if (fAllAccounts || (account == strAccount))
             {
                 Object entry;
@@ -1560,7 +1564,7 @@ Value _listtransactions(const Array& params, bool fHelp, bool mainWallet)
     {
         CWalletTx *const pwtx = (*it).second.first;
         if (pwtx != 0)
-            ListTransactions(*pwtx, strAccount, 0, true, ret);
+            ListTransactions(*pwtx, strAccount, 0, true, ret, mainWallet);
         CAccountingEntry *const pacentry = (*it).second.second;
         if (pacentry != 0)
             AcentryToJSON(*pacentry, strAccount, ret);
@@ -1741,7 +1745,7 @@ Value _gettransaction(const Array& params, bool fHelp, bool mainWallet)
     WalletTxToJSON(pwallet->mapWallet[hash], entry);
 
     Array details;
-    ListTransactions(pwallet->mapWallet[hash], "*", 0, false, details);
+    ListTransactions(pwallet->mapWallet[hash], "*", 0, false, details, mainWallet);
     entry.push_back(Pair("details", details));
 
     return entry;
@@ -2783,7 +2787,9 @@ Value _listunspent(const Array& params, bool fHelp, bool mainWallet)
 
     Array results;
     vector<COutput> vecOutputs;
-    (mainWallet ? pwalletMain : pwalletPub)->AvailableCoins(vecOutputs, false);
+
+    CWallet* pwallet = mainWallet ? pwalletMain : pwalletPub;
+    pwallet->AvailableCoins(vecOutputs, false);
     BOOST_FOREACH(const COutput& out, vecOutputs)
     {
         if (out.nDepth < nMinDepth || out.nDepth > nMaxDepth)
@@ -2804,6 +2810,13 @@ Value _listunspent(const Array& params, bool fHelp, bool mainWallet)
         Object entry;
         entry.push_back(Pair("txid", out.tx->GetHash().GetHex()));
         entry.push_back(Pair("vout", out.i));
+        CTxDestination address;
+        if (ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
+        {
+            entry.push_back(Pair("address", CBitcoinAddress(address).ToString()));
+            if (pwallet->mapAddressBook.count(address))
+                entry.push_back(Pair("account", pwallet->mapAddressBook[address]));
+        }
         entry.push_back(Pair("scriptPubKey", HexStr(pk.begin(), pk.end())));
         entry.push_back(Pair("amount",ValueFromAmount(nValue)));
         entry.push_back(Pair("confirmations",out.nDepth));
