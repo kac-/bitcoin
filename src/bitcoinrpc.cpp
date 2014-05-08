@@ -673,9 +673,9 @@ Value getnewaddress(const Array& params, bool fHelp)
 }
 
 
-CBitcoinAddress GetAccountAddress(string strAccount, bool bForceNew=false)
+CBitcoinAddress GetAccountAddress(string strAccount, bool bForceNew=false, CWallet* pwallet = pwalletMain)
 {
-    CWalletDB walletdb(pwalletMain->strWalletFile);
+    CWalletDB walletdb(pwallet->strWalletFile);
 
     CAccount account;
     walletdb.ReadAccount(strAccount, account);
@@ -687,8 +687,8 @@ CBitcoinAddress GetAccountAddress(string strAccount, bool bForceNew=false)
     {
         CScript scriptPubKey;
         scriptPubKey.SetDestination(account.vchPubKey.GetID());
-        for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin();
-             it != pwalletMain->mapWallet.end() && account.vchPubKey.IsValid();
+        for (map<uint256, CWalletTx>::iterator it = pwallet->mapWallet.begin();
+             it != pwallet->mapWallet.end() && account.vchPubKey.IsValid();
              ++it)
         {
             const CWalletTx& wtx = (*it).second;
@@ -701,10 +701,10 @@ CBitcoinAddress GetAccountAddress(string strAccount, bool bForceNew=false)
     // Generate a new key
     if (!account.vchPubKey.IsValid() || bForceNew || bKeyUsed)
     {
-        if (!pwalletMain->GetKeyFromPool(account.vchPubKey, false))
+        if (!pwallet->GetKeyFromPool(account.vchPubKey, false))
             throw JSONRPCError(-12, "Error: Keypool ran out, please call keypoolrefill first");
 
-        pwalletMain->SetAddressBookName(account.vchPubKey.GetID(), strAccount);
+        pwallet->SetAddressBookName(account.vchPubKey.GetID(), strAccount);
         walletdb.WriteAccount(strAccount, account);
     }
 
@@ -751,8 +751,8 @@ Value _setaccount(const Array& params, bool fHelp, bool mainWallet)
     if (pwallet->mapAddressBook.count(address.Get()))
     {
         string strOldAccount = pwallet->mapAddressBook[address.Get()];
-        if (address == GetAccountAddress(strOldAccount))
-            GetAccountAddress(strOldAccount, true);
+        if (address == GetAccountAddress(strOldAccount, pwallet))
+            GetAccountAddress(strOldAccount, true, pwallet);
     }
 
     pwallet->SetAddressBookName(address.Get(), strAccount);
@@ -986,9 +986,9 @@ Value getreceivedbyaddress(const Array& params, bool fHelp)
 }
 
 
-void GetAccountAddresses(string strAccount, set<CTxDestination>& setAddress)
+void GetAccountAddresses(string strAccount, set<CTxDestination>& setAddress, CWallet* pwallet = pwalletMain)
 {
-    BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, pwalletMain->mapAddressBook)
+    BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, pwallet->mapAddressBook)
     {
         const CTxDestination& address = item.first;
         const string& strName = item.second;
