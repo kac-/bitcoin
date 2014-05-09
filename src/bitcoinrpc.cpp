@@ -2004,15 +2004,16 @@ public:
     }
 };
 
-Value validateaddress(const Array& params, bool fHelp)
+Value _validateaddress(const Array& params, bool fHelp, bool mainWallet)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "validateaddress <ppcoinaddress>\n"
+            string(mainWallet ? "" : "pub") + "validateaddress <ppcoinaddress>\n"
             "Return information about <ppcoinaddress>.");
 
     CBitcoinAddress address(params[0].get_str());
     bool isValid = address.IsValid();
+    CWallet* pwallet = mainWallet? pwalletMain : pwalletPub;
 
     Object ret;
     ret.push_back(Pair("isvalid", isValid));
@@ -2021,16 +2022,26 @@ Value validateaddress(const Array& params, bool fHelp)
         CTxDestination dest = address.Get();
         string currentAddress = address.ToString();
         ret.push_back(Pair("address", currentAddress));
-        bool fMine = IsMine(*pwalletMain, dest);
+        bool fMine = IsMine(*pwallet, dest);
         ret.push_back(Pair("ismine", fMine));
         if (fMine) {
             Object detail = boost::apply_visitor(DescribeAddressVisitor(), dest);
             ret.insert(ret.end(), detail.begin(), detail.end());
         }
-        if (pwalletMain->mapAddressBook.count(dest))
-            ret.push_back(Pair("account", pwalletMain->mapAddressBook[dest]));
+        if (pwallet->mapAddressBook.count(dest))
+            ret.push_back(Pair("account", pwallet->mapAddressBook[dest]));
     }
     return ret;
+}
+
+Value validateaddress(const Array& params, bool fHelp)
+{
+    return _validateaddress(params, fHelp, true);
+}
+
+Value pubvalidateaddress(const Array& params, bool fHelp)
+{
+    return _validateaddress(params, fHelp, false);
 }
 
 Value getwork(const Array& params, bool fHelp)
@@ -3244,6 +3255,7 @@ static const CRPCCommand vRPCCommands[] =
     { "publistaccounts",        &publistaccounts,        false},
     { "pubgetaddressesbyaccount",&pubgetaddressesbyaccount,  true },
     { "pubsetaccount",          &pubsetaccount,          true },
+    { "pubvalidateaddress",     &pubvalidateaddress,     true },
 };
 
 CRPCTable::CRPCTable()
