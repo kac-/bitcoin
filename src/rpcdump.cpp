@@ -87,7 +87,7 @@ Value pubimportkey(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
-            "pubimportkey <ppcoinpubkey> [label] [rescan]\n"
+            "pubimportkey <ppcoinpubkey> [label] [scan]\n"
             "Adds a public key to your pub-wallet.");
 
     bool fScan = true;
@@ -159,4 +159,18 @@ Value dumpprivkey(const Array& params, bool fHelp)
     if (!pwalletMain->GetSecret(keyID, vchSecret, fCompressed))
         throw JSONRPCError(-4,"Private key for address " + strAddress + " is not known");
     return CBitcoinSecret(vchSecret, fCompressed).ToString();
+}
+
+Value pubscan(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+        throw runtime_error(
+            "pubscan\n"
+            "Scan blockchain for pub-wallet transactions.");
+    {
+        LOCK2(cs_main, pwalletPub->cs_wallet);
+        pwalletPub->ScanForWalletTransactions(pindexGenesisBlock, true);
+        pwalletPub->ReacceptWalletTransactions();
+    }
+    return Value::null;
 }

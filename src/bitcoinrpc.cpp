@@ -52,6 +52,7 @@ static CCriticalSection cs_nWalletUnlockTime;
 extern Value dumpprivkey(const Array& params, bool fHelp);
 extern Value importprivkey(const Array& params, bool fHelp);
 extern Value pubimportkey(const Array& params, bool fHelp);
+extern Value pubscan(const Array& params, bool fHelp);
 
 Object JSONRPCError(int code, const string& message)
 {
@@ -1036,12 +1037,12 @@ Value getreceivedbyaccount(const Array& params, bool fHelp)
 }
 
 
-int64 GetAccountBalance(CWalletDB& walletdb, const string& strAccount, int nMinDepth)
+int64 GetAccountBalance(CWalletDB& walletdb, const string& strAccount, int nMinDepth, CWallet* pwallet = pwalletMain)
 {
     int64 nBalance = 0;
 
     // Tally wallet transactions
-    for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
+    for (map<uint256, CWalletTx>::iterator it = pwallet->mapWallet.begin(); it != pwallet->mapWallet.end(); ++it)
     {
         const CWalletTx& wtx = (*it).second;
         if (!wtx.IsFinal())
@@ -1061,23 +1062,24 @@ int64 GetAccountBalance(CWalletDB& walletdb, const string& strAccount, int nMinD
     return nBalance;
 }
 
-int64 GetAccountBalance(const string& strAccount, int nMinDepth)
+int64 GetAccountBalance(const string& strAccount, int nMinDepth, CWallet* pwallet = pwalletMain)
 {
-    CWalletDB walletdb(pwalletMain->strWalletFile);
-    return GetAccountBalance(walletdb, strAccount, nMinDepth);
+    CWalletDB walletdb(pwallet->strWalletFile);
+    return GetAccountBalance(walletdb, strAccount, nMinDepth, pwallet);
 }
 
 
-Value getbalance(const Array& params, bool fHelp)
+Value _getbalance(const Array& params, bool fHelp, bool mainWallet)
 {
     if (fHelp || params.size() > 2)
         throw runtime_error(
-            "getbalance [account] [minconf=1]\n"
+            string(mainWallet?"":"pub")+"getbalance [account] [minconf=1]\n"
             "If [account] is not specified, returns the server's total available balance.\n"
             "If [account] is specified, returns the balance in the account.");
 
+    CWallet* pwallet = mainWallet ? pwalletMain : pwalletPub;
     if (params.size() == 0)
-        return  ValueFromAmount(pwalletMain->GetBalance());
+        return  ValueFromAmount(pwallet->GetBalance());
 
     int nMinDepth = 1;
     if (params.size() > 1)
@@ -1088,7 +1090,7 @@ Value getbalance(const Array& params, bool fHelp)
         // (GetBalance() sums up all unspent TxOuts)
         // getbalance and getbalance '*' should always return the same number.
         int64 nBalance = 0;
-        for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
+        for (map<uint256, CWalletTx>::iterator it = pwallet->mapWallet.begin(); it != pwallet->mapWallet.end(); ++it)
         {
             const CWalletTx& wtx = (*it).second;
             if (!wtx.IsFinal())
@@ -1115,11 +1117,18 @@ Value getbalance(const Array& params, bool fHelp)
 
     string strAccount = AccountFromValue(params[0]);
 
-    int64 nBalance = GetAccountBalance(strAccount, nMinDepth);
+    int64 nBalance = GetAccountBalance(strAccount, nMinDepth, pwallet);
 
     return ValueFromAmount(nBalance);
 }
 
+Value getbalance(const Array& params, bool fHelp){
+    return _getbalance(params, fHelp, true);
+}
+
+Value pubgetbalance(const Array& params, bool fHelp){
+    return _getbalance(params, fHelp, false);
+}
 
 Value movecmd(const Array& params, bool fHelp)
 {
@@ -3261,6 +3270,9 @@ static const CRPCCommand vRPCCommands[] =
     { "pubgetaddressesbyaccount",&pubgetaddressesbyaccount,  true },
     { "pubsetaccount",          &pubsetaccount,          true },
     { "pubvalidateaddress",     &pubvalidateaddress,     true },
+    { "pubscan",                &pubscan,                true },
+    { "pubgetbalance",          &pubgetbalance,          false },
+
 };
 
 CRPCTable::CRPCTable()
@@ -3923,6 +3935,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "publistaccounts"        && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "pubimportkey"           && n > 2) ConvertTo<bool>(params[2]);
     if (strMethod == "sendrawtransaction"     && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "pubgetbalance"          && n > 1) ConvertTo<boost::int64_t>(params[1]);
 
     return params;
 }
